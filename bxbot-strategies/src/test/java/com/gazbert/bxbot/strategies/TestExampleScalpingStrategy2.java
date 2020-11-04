@@ -46,14 +46,16 @@ import org.junit.Before;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
 
+
 /**
- * Tests the behaviour of the example Scalping Strategy. Some fairly decent coverage here, but we've
- * not tested all the exception handling conditions - you will want to do a much more thorough job
+ * Tests the behaviour of the example Scalping Strategy.
+ * Some fairly decent coverage here, but we've not tested all the exception handling conditions -
+ * you will want to do a much more thorough job
  * than this with your own strategies :-)
  *
  * @author gazbert
  */
-public class TestExampleScalpingStrategy {
+public class TestExampleScalpingStrategy2 {
 
   private static final String MARKET_ID = "btc_usd";
   private static final String BASE_CURRENCY = "BTC";
@@ -61,6 +63,7 @@ public class TestExampleScalpingStrategy {
 
   private static final String CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT = "20"; // USD amount
   private static final String CONFIG_ITEM_MINIMUM_PERCENTAGE_GAIN = "2";
+  private static final String ORDER_ID = "45345346";
 
   private TradingApi tradingApi;
   private Market market;
@@ -95,8 +98,8 @@ public class TestExampleScalpingStrategy {
     expect(config.getConfigItem("minimum-percentage-gain"))
         .andReturn(CONFIG_ITEM_MINIMUM_PERCENTAGE_GAIN);
 
-    // expect Market name to be logged zero or more times. Loose mock behaviour here; name is
-    // cosmetic.
+    // expect Market name to be logged zero or more times.
+    // Loose mock behaviour here; name is cosmetic.
     expect(market.getName()).andReturn("BTC_USD").anyTimes();
 
     // expect market order book to be fetched
@@ -137,7 +140,7 @@ public class TestExampleScalpingStrategy {
 
     replay(tradingApi, market, config, marketOrderBook, marketBuyOrder, marketSellOrder);
 
-    final ExampleScalpingStrategy strategy = new ExampleScalpingStrategy();
+    final ExampleScalpingStrategy2 strategy = new ExampleScalpingStrategy2();
     strategy.init(tradingApi, market, config);
     strategy.execute();
 
@@ -163,12 +166,7 @@ public class TestExampleScalpingStrategy {
     // mock an existing buy order state
     final BigDecimal lastOrderAmount = new BigDecimal("35");
     final BigDecimal lastOrderPrice = new BigDecimal("1454.018");
-
-    final Object orderState = createMock(OrderState.class);
-    Whitebox.setInternalState(orderState, "id", "45345346");
-    Whitebox.setInternalState(orderState, "type", OrderType.BUY);
-    Whitebox.setInternalState(orderState, "price", lastOrderPrice);
-    Whitebox.setInternalState(orderState, "amount", lastOrderAmount);
+    final Object orderState = createMockOrder(OrderType.BUY, lastOrderPrice, lastOrderAmount);
 
     // expect to check if the buy order has filled
     expect(market.getId()).andReturn(MARKET_ID);
@@ -190,7 +188,7 @@ public class TestExampleScalpingStrategy {
     replay(
         tradingApi, market, config, marketOrderBook, marketBuyOrder, marketSellOrder, orderState);
 
-    final ExampleScalpingStrategy strategy = new ExampleScalpingStrategy();
+    final ExampleScalpingStrategy2 strategy = new ExampleScalpingStrategy2();
 
     // inject the existing buy order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
@@ -222,12 +220,7 @@ public class TestExampleScalpingStrategy {
     // mock an existing buy order state
     final BigDecimal lastOrderAmount = new BigDecimal("35");
     final BigDecimal lastOrderPrice = new BigDecimal("1454.018");
-
-    final Object orderState = createMock(OrderState.class);
-    Whitebox.setInternalState(orderState, "id", "45345346");
-    Whitebox.setInternalState(orderState, "type", OrderType.BUY);
-    Whitebox.setInternalState(orderState, "price", lastOrderPrice);
-    Whitebox.setInternalState(orderState, "amount", lastOrderAmount);
+    final Object orderState = createMockOrder(OrderType.BUY, lastOrderPrice, lastOrderAmount);
 
     // expect to check if the buy order has filled
     expect(market.getId()).andReturn(MARKET_ID);
@@ -237,7 +230,7 @@ public class TestExampleScalpingStrategy {
     expect(tradingApi.getYourOpenOrders(MARKET_ID)).andReturn(openOrders);
 
     // expect strategy to find existing open order and hold current position
-    expect(openOrders.get(0).getId()).andReturn("45345346");
+    expect(openOrders.get(0).getId()).andReturn(ORDER_ID);
 
     replay(
         tradingApi,
@@ -249,7 +242,7 @@ public class TestExampleScalpingStrategy {
         orderState,
         unfilledOrder);
 
-    final ExampleScalpingStrategy strategy = new ExampleScalpingStrategy();
+    final ExampleScalpingStrategy2 strategy = new ExampleScalpingStrategy2();
 
     // inject the existing buy order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
@@ -288,11 +281,7 @@ public class TestExampleScalpingStrategy {
     // mock an existing sell order state
     final BigDecimal lastOrderAmount = new BigDecimal("35");
     final BigDecimal lastOrderPrice = new BigDecimal("1454.018");
-    final Object orderState = createMock(OrderState.class);
-    Whitebox.setInternalState(orderState, "id", "45345346");
-    Whitebox.setInternalState(orderState, "type", OrderType.SELL);
-    Whitebox.setInternalState(orderState, "price", lastOrderPrice);
-    Whitebox.setInternalState(orderState, "amount", lastOrderAmount);
+    final Object orderState = createMockOrder(OrderType.SELL, lastOrderPrice, lastOrderAmount);
 
     // expect to check if the sell order has filled
     expect(market.getId()).andReturn(MARKET_ID);
@@ -316,7 +305,7 @@ public class TestExampleScalpingStrategy {
     replay(
         tradingApi, market, config, marketOrderBook, marketBuyOrder, marketSellOrder, orderState);
 
-    final ExampleScalpingStrategy strategy = new ExampleScalpingStrategy();
+    final ExampleScalpingStrategy2 strategy = new ExampleScalpingStrategy2();
 
     // inject the existing sell order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
@@ -348,11 +337,7 @@ public class TestExampleScalpingStrategy {
     // mock an existing sell order state
     final BigDecimal lastOrderAmount = new BigDecimal("35");
     final BigDecimal lastOrderPrice = new BigDecimal("1454.018");
-    final Object orderState = createMock(OrderState.class);
-    Whitebox.setInternalState(orderState, "id", "45345346");
-    Whitebox.setInternalState(orderState, "type", OrderType.SELL);
-    Whitebox.setInternalState(orderState, "price", lastOrderPrice);
-    Whitebox.setInternalState(orderState, "amount", lastOrderAmount);
+    final Object orderState = createMockOrder(OrderType.SELL, lastOrderPrice, lastOrderAmount);
 
     // expect to check if the sell order has filled
     expect(market.getId()).andReturn(MARKET_ID);
@@ -362,7 +347,7 @@ public class TestExampleScalpingStrategy {
     expect(tradingApi.getYourOpenOrders(MARKET_ID)).andReturn(openOrders);
 
     // expect strategy to find existing open order and hold current position
-    expect(openOrders.get(0).getId()).andReturn("45345346");
+    expect(openOrders.get(0).getId()).andReturn(ORDER_ID);
 
     replay(
         tradingApi,
@@ -374,7 +359,7 @@ public class TestExampleScalpingStrategy {
         orderState,
         unfilledOrder);
 
-    final ExampleScalpingStrategy strategy = new ExampleScalpingStrategy();
+    final ExampleScalpingStrategy2 strategy = new ExampleScalpingStrategy2();
 
     // inject the existing sell order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
@@ -429,7 +414,7 @@ public class TestExampleScalpingStrategy {
 
     replay(tradingApi, market, config, marketOrderBook, marketBuyOrder, marketSellOrder);
 
-    final ExampleScalpingStrategy strategy = new ExampleScalpingStrategy();
+    final ExampleScalpingStrategy2 strategy = new ExampleScalpingStrategy2();
     strategy.init(tradingApi, market, config);
     strategy.execute();
 
@@ -455,12 +440,7 @@ public class TestExampleScalpingStrategy {
     // mock an existing sell order state
     final BigDecimal lastOrderAmount = new BigDecimal("35");
     final BigDecimal lastOrderPrice = new BigDecimal("1454.018");
-
-    final Object orderState = createMock(OrderState.class);
-    Whitebox.setInternalState(orderState, "id", "45345346");
-    Whitebox.setInternalState(orderState, "type", OrderType.SELL);
-    Whitebox.setInternalState(orderState, "price", lastOrderPrice);
-    Whitebox.setInternalState(orderState, "amount", lastOrderAmount);
+    final Object orderState = createMockOrder(OrderType.SELL, lastOrderPrice, lastOrderAmount);
 
     // expect to check if the sell order has filled
     expect(market.getId()).andReturn(MARKET_ID);
@@ -483,7 +463,7 @@ public class TestExampleScalpingStrategy {
     replay(
         tradingApi, market, config, marketOrderBook, marketBuyOrder, marketSellOrder, orderState);
 
-    final ExampleScalpingStrategy strategy = new ExampleScalpingStrategy();
+    final ExampleScalpingStrategy2 strategy = new ExampleScalpingStrategy2();
 
     // inject the existing sell order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
@@ -515,12 +495,7 @@ public class TestExampleScalpingStrategy {
     // mock an existing buy order state
     final BigDecimal lastOrderAmount = new BigDecimal("35");
     final BigDecimal lastOrderPrice = new BigDecimal("1454.018");
-
-    final Object orderState = createMock(OrderState.class);
-    Whitebox.setInternalState(orderState, "id", "45345346");
-    Whitebox.setInternalState(orderState, "type", OrderType.BUY);
-    Whitebox.setInternalState(orderState, "price", lastOrderPrice);
-    Whitebox.setInternalState(orderState, "amount", lastOrderAmount);
+    final Object orderState = createMockOrder(OrderType.BUY, lastOrderPrice, lastOrderAmount);
 
     // expect to check if the buy order has filled
     expect(market.getId()).andReturn(MARKET_ID);
@@ -541,7 +516,7 @@ public class TestExampleScalpingStrategy {
     replay(
         tradingApi, market, config, marketOrderBook, marketBuyOrder, marketSellOrder, orderState);
 
-    final ExampleScalpingStrategy strategy = new ExampleScalpingStrategy();
+    final ExampleScalpingStrategy2 strategy = new ExampleScalpingStrategy2();
 
     // inject the existing buy order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
@@ -590,7 +565,7 @@ public class TestExampleScalpingStrategy {
 
     replay(tradingApi, market, config, marketOrderBook, marketBuyOrder, marketSellOrder);
 
-    final ExampleScalpingStrategy strategy = new ExampleScalpingStrategy();
+    final ExampleScalpingStrategy2 strategy = new ExampleScalpingStrategy2();
     strategy.init(tradingApi, market, config);
     strategy.execute();
 
@@ -616,12 +591,7 @@ public class TestExampleScalpingStrategy {
     // mock an existing sell order state
     final BigDecimal lastOrderAmount = new BigDecimal("35");
     final BigDecimal lastOrderPrice = new BigDecimal("1454.018");
-
-    final Object orderState = createMock(OrderState.class);
-    Whitebox.setInternalState(orderState, "id", "45345346");
-    Whitebox.setInternalState(orderState, "type", OrderType.SELL);
-    Whitebox.setInternalState(orderState, "price", lastOrderPrice);
-    Whitebox.setInternalState(orderState, "amount", lastOrderAmount);
+    final Object orderState = createMockOrder(OrderType.SELL, lastOrderPrice, lastOrderAmount);
 
     // expect to check if the sell order has filled
     expect(market.getId()).andReturn(MARKET_ID);
@@ -644,7 +614,7 @@ public class TestExampleScalpingStrategy {
     replay(
         tradingApi, market, config, marketOrderBook, marketBuyOrder, marketSellOrder, orderState);
 
-    final ExampleScalpingStrategy strategy = new ExampleScalpingStrategy();
+    final ExampleScalpingStrategy2 strategy = new ExampleScalpingStrategy2();
 
     // inject the existing sell order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
@@ -673,15 +643,9 @@ public class TestExampleScalpingStrategy {
     final BigDecimal askSpotPrice = new BigDecimal("1455.016");
     expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
 
-    // mock an existing buy order state
     final BigDecimal lastOrderAmount = new BigDecimal("35");
     final BigDecimal lastOrderPrice = new BigDecimal("1454.018");
-
-    final Object orderState = createMock(OrderState.class);
-    Whitebox.setInternalState(orderState, "id", "45345346");
-    Whitebox.setInternalState(orderState, "type", OrderType.BUY);
-    Whitebox.setInternalState(orderState, "price", lastOrderPrice);
-    Whitebox.setInternalState(orderState, "amount", lastOrderAmount);
+    final Object orderState = createMockOrder(OrderType.BUY, lastOrderPrice, lastOrderAmount);
 
     // expect to check if the buy order has filled
     expect(market.getId()).andReturn(MARKET_ID);
@@ -702,7 +666,7 @@ public class TestExampleScalpingStrategy {
     replay(
         tradingApi, market, config, marketOrderBook, marketBuyOrder, marketSellOrder, orderState);
 
-    final ExampleScalpingStrategy strategy = new ExampleScalpingStrategy();
+    final ExampleScalpingStrategy2 strategy = new ExampleScalpingStrategy2();
 
     // inject the existing buy order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
@@ -713,5 +677,18 @@ public class TestExampleScalpingStrategy {
 
     verify(
         tradingApi, market, config, marketOrderBook, marketBuyOrder, marketSellOrder, orderState);
+  }
+
+  // mock existing buy or sell order state
+  private Object createMockOrder(OrderType type,
+                                 BigDecimal lastOrderPrice, BigDecimal lastOrderAmount)
+          throws ClassNotFoundException {
+
+    final Object orderState = createMock(OrderState.class);
+    Whitebox.setInternalState(orderState, "id", ORDER_ID);
+    Whitebox.setInternalState(orderState, "type", type);
+    Whitebox.setInternalState(orderState, "price", lastOrderPrice);
+    Whitebox.setInternalState(orderState, "amount", lastOrderAmount);
+    return orderState;
   }
 }
