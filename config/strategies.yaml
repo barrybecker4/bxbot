@@ -44,10 +44,10 @@ strategies:
     configItems:
       counter-currency-buy-order-amount: 20
       minimum-percentage-gain: 2
-  - id: scalping-strategy2
+  - id: barrys-strategy
 
     # A friendly name for the strategy.
-    name: Barry Scalping Strat2
+    name: Barrys Scalping Strat2
 
     # The description value is optional.
     description: >
@@ -59,7 +59,7 @@ strategies:
     # For the className value, you must specify the fully qualified name of your Strategy class for the
     # Trading Engine to load and execute. This class must be on the runtime classpath.
     # If you set this value to load your strategy, you cannot set the beanName value.
-    className: com.gazbert.bxbot.strategies.ExampleScalpingStrategy2
+    className: com.gazbert.bxbot.strategies.BarrysTradingStrategy
 
     # For the beanName value, you must specify the Spring bean name of you Strategy component class
     # for the Trading Engine to load and execute.

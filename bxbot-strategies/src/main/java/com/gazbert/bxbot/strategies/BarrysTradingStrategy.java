@@ -25,8 +25,8 @@ import org.springframework.stereotype.Component;
  *
  * @author Barry Becker
  */
-@Component("exampleScalpingStrategy2") // used to load the strategy using Spring bean injection
-public class ExampleScalpingStrategy2 implements TradingStrategy {
+@Component("BarrysTradingStrategy") // used to load the strategy using Spring bean injection
+public class BarrysTradingStrategy implements TradingStrategy {
 
   private static final Logger LOG = LogManager.getLogger();
 

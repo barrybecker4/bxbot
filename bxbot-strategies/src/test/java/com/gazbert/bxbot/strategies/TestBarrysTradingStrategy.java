@@ -55,7 +55,7 @@ import org.powermock.reflect.Whitebox;
  *
  * @author gazbert
  */
-public class TestExampleScalpingStrategy2 {
+public class TestBarrysTradingStrategy {
 
   private static final String MARKET_ID = "btc_usd";
   private static final String BASE_CURRENCY = "BTC";
@@ -140,7 +140,7 @@ public class TestExampleScalpingStrategy2 {
 
     replay(tradingApi, market, config, marketOrderBook, marketBuyOrder, marketSellOrder);
 
-    final ExampleScalpingStrategy2 strategy = new ExampleScalpingStrategy2();
+    final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
     strategy.init(tradingApi, market, config);
     strategy.execute();
 
@@ -188,7 +188,7 @@ public class TestExampleScalpingStrategy2 {
     replay(
         tradingApi, market, config, marketOrderBook, marketBuyOrder, marketSellOrder, orderState);
 
-    final ExampleScalpingStrategy2 strategy = new ExampleScalpingStrategy2();
+    final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
 
     // inject the existing buy order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
@@ -242,7 +242,7 @@ public class TestExampleScalpingStrategy2 {
         orderState,
         unfilledOrder);
 
-    final ExampleScalpingStrategy2 strategy = new ExampleScalpingStrategy2();
+    final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
 
     // inject the existing buy order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
@@ -305,7 +305,7 @@ public class TestExampleScalpingStrategy2 {
     replay(
         tradingApi, market, config, marketOrderBook, marketBuyOrder, marketSellOrder, orderState);
 
-    final ExampleScalpingStrategy2 strategy = new ExampleScalpingStrategy2();
+    final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
 
     // inject the existing sell order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
@@ -359,7 +359,7 @@ public class TestExampleScalpingStrategy2 {
         orderState,
         unfilledOrder);
 
-    final ExampleScalpingStrategy2 strategy = new ExampleScalpingStrategy2();
+    final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
 
     // inject the existing sell order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
@@ -414,7 +414,7 @@ public class TestExampleScalpingStrategy2 {
 
     replay(tradingApi, market, config, marketOrderBook, marketBuyOrder, marketSellOrder);
 
-    final ExampleScalpingStrategy2 strategy = new ExampleScalpingStrategy2();
+    final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
     strategy.init(tradingApi, market, config);
     strategy.execute();
 
@@ -463,7 +463,7 @@ public class TestExampleScalpingStrategy2 {
     replay(
         tradingApi, market, config, marketOrderBook, marketBuyOrder, marketSellOrder, orderState);
 
-    final ExampleScalpingStrategy2 strategy = new ExampleScalpingStrategy2();
+    final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
 
     // inject the existing sell order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
@@ -516,7 +516,7 @@ public class TestExampleScalpingStrategy2 {
     replay(
         tradingApi, market, config, marketOrderBook, marketBuyOrder, marketSellOrder, orderState);
 
-    final ExampleScalpingStrategy2 strategy = new ExampleScalpingStrategy2();
+    final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
 
     // inject the existing buy order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
@@ -565,7 +565,7 @@ public class TestExampleScalpingStrategy2 {
 
     replay(tradingApi, market, config, marketOrderBook, marketBuyOrder, marketSellOrder);
 
-    final ExampleScalpingStrategy2 strategy = new ExampleScalpingStrategy2();
+    final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
     strategy.init(tradingApi, market, config);
     strategy.execute();
 
@@ -614,7 +614,7 @@ public class TestExampleScalpingStrategy2 {
     replay(
         tradingApi, market, config, marketOrderBook, marketBuyOrder, marketSellOrder, orderState);
 
-    final ExampleScalpingStrategy2 strategy = new ExampleScalpingStrategy2();
+    final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
 
     // inject the existing sell order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
@@ -666,7 +666,7 @@ public class TestExampleScalpingStrategy2 {
     replay(
         tradingApi, market, config, marketOrderBook, marketBuyOrder, marketSellOrder, orderState);
 
-    final ExampleScalpingStrategy2 strategy = new ExampleScalpingStrategy2();
+    final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
 
     // inject the existing buy order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
