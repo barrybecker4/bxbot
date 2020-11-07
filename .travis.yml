@@ -10,4 +10,5 @@ script:
 addons:
   sonarcloud:
     organization: "barrybecker4"
-    token: ${SONAR_TOKEN}
+    token:
+      secure: ${SONAR_TOKEN}

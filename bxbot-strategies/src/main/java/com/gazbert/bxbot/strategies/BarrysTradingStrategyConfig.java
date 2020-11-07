@@ -39,6 +39,11 @@ public class BarrysTradingStrategyConfig {
    */
   public BarrysTradingStrategyConfig(StrategyConfig config) {
 
+    counterCurrencyBuyOrderAmount = retrieveCounterCurrencyBuyOrderAmount(config);
+    minimumPercentageGain = retrieveMinimumPercentageGainAmount(config);
+  }
+
+  private BigDecimal retrieveCounterCurrencyBuyOrderAmount(StrategyConfig config) {
     // Get counter currency buy amount...
     final String counterCurrencyBuyOrderAmountFromConfigAsString =
             config.getConfigItem("counter-currency-buy-order-amount");
@@ -52,8 +57,10 @@ public class BarrysTradingStrategyConfig {
             + counterCurrencyBuyOrderAmountFromConfigAsString);
 
     // Will fail fast if value is not a number
-    counterCurrencyBuyOrderAmount = new BigDecimal(counterCurrencyBuyOrderAmountFromConfigAsString);
-    LOG.info(() -> "counterCurrencyBuyOrderAmount: " + counterCurrencyBuyOrderAmount);
+    return new BigDecimal(counterCurrencyBuyOrderAmountFromConfigAsString);
+  }
+
+  private BigDecimal retrieveMinimumPercentageGainAmount(StrategyConfig config) {
 
     // Get min % gain...
     final String minimumPercentageGainFromConfigAsString =
@@ -69,9 +76,6 @@ public class BarrysTradingStrategyConfig {
     // Will fail fast if value is not a number
     final BigDecimal minimumPercentageGainFromConfig =
             new BigDecimal(minimumPercentageGainFromConfigAsString);
-    minimumPercentageGain =
-            minimumPercentageGainFromConfig.divide(new BigDecimal(100), 8, RoundingMode.HALF_UP);
-
-    LOG.info(() -> "minimumPercentageGain in decimal is: " + minimumPercentageGain);
+    return minimumPercentageGainFromConfig.divide(new BigDecimal(100), 8, RoundingMode.HALF_UP);
   }
 }
