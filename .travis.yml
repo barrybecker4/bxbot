@@ -5,8 +5,10 @@ jdk:
 install: true
 
 script:
-  - ./mvnw clean install org.jacoco:jacoco-maven-plugin:prepare-agent org.jacoco:jacoco-maven-plugin:report sonar:sonar -Dmaven.javadoc.skip=true -Pall -Dsonar.projectKey=gazbert_bxbot -Dsonar.organization=gazbert-github
+  - ./mvnw clean install org.jacoco:jacoco-maven-plugin:prepare-agent org.jacoco:jacoco-maven-plugin:report sonar:sonar -Dmaven.javadoc.skip=true -Pall -Dsonar.projectKey=bxbot -Dsonar.organization=barrybecker4
 
 addons:
   sonarcloud:
     organization: "barrybecker4"
+    token:
+      secure: $SONAR_TOKEN

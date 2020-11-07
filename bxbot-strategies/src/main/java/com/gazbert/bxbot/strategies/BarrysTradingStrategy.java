@@ -30,53 +30,35 @@ public class BarrysTradingStrategy implements TradingStrategy {
 
   private static final Logger LOG = LogManager.getLogger();
 
-  /** The decimal format for the logs. */
   private static final String DECIMAL_FORMAT = "#.########";
 
-  /** Reference to the main Trading API. */
   private TradingApi tradingApi;
 
-  /** The market this strategy is trading on. */
   private Market market;
 
-  /** The state of the order. */
+  private BarrysTradingStrategyConfig strategyConfig;
+
   private OrderState lastOrder;
 
   /**
-   * The counter currency amount to use when placing the buy order. This was loaded from the
-   * strategy entry in the {project-root}/config/strategies.yaml config file.
-   */
-  private BigDecimal counterCurrencyBuyOrderAmount;
-
-  /**
-   * The minimum % gain was to achieve before placing a SELL oder. This was loaded from the strategy
-   * entry in the {project-root}/config/strategies.yaml config file.
-   */
-  private BigDecimal minimumPercentageGain;
-
-  /**
-   * Initialises the Trading Strategy. Called once by the Trading Engine when the bot starts up;
-   * it's a bit like a servlet init() method.
+   * Called once by the Trading Engine when the bot starts up.
    *
    * @param tradingApi the Trading API. Use this to make trades and stuff.
-   * @param market the market for this strategy. This is the market the strategy is currently
-   *     running on - you wire this up in the markets.yaml and strategies.yaml files.
-   * @param config configuration for the strategy. Contains any (optional) config you set up in the
-   *     strategies.yaml file.
+   * @param market the market the strategy is currently running on -
+   *               you wire this up in the markets.yaml and strategies.yaml files.
+   * @param config Contains any (optional) config you set up in the strategies.yaml file.
    */
   @Override
   public void init(TradingApi tradingApi, Market market, StrategyConfig config) {
-    LOG.info(() -> "Initialising Trading Strategy...");
     this.tradingApi = tradingApi;
     this.market = market;
-    getConfigForStrategy(config);
+    strategyConfig = new BarrysTradingStrategyConfig(config);
     LOG.info(() -> "Trading Strategy initialised successfully!");
   }
 
   /**
-   * This is the main execution method of the Trading Strategy. It is where your algorithm lives.
-   *
-   * <p>It is called by the Trading Engine during each trade cycle, e.g. every 60s. The trade cycle
+   * The main execution method of the Trading Strategy.
+   * It is called by the Trading Engine during each trade cycle, e.g. every 60s. The trade cycle
    * is configured in the {project-root}/config/engine.yaml file.
    *
    * @throws StrategyException if something unexpected occurs. This tells the Trading Engine to
@@ -87,66 +69,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
     LOG.info(() -> market.getName() + " Checking order status...");
 
     try {
-      // Grab the latest order book for the market.
-      final MarketOrderBook orderBook = tradingApi.getMarketOrders(market.getId());
-
-      final List<MarketOrder> buyOrders = orderBook.getBuyOrders();
-      if (buyOrders.isEmpty()) {
-        LOG.warn(
-            () ->
-                "Exchange returned empty Buy Orders. Ignoring this trade window. OrderBook: "
-                    + orderBook);
-        return;
-      }
-
-      final List<MarketOrder> sellOrders = orderBook.getSellOrders();
-      if (sellOrders.isEmpty()) {
-        LOG.warn(
-            () ->
-                "Exchange returned empty Sell Orders. Ignoring this trade window. OrderBook: "
-                    + orderBook);
-        return;
-      }
-
-      // Get the current BID and ASK spot prices.
-      final BigDecimal currentBidPrice = buyOrders.get(0).getPrice();
-      final BigDecimal currentAskPrice = sellOrders.get(0).getPrice();
-
-      LOG.info(
-          () ->
-              market.getName()
-                  + " Current BID price="
-                  + new DecimalFormat(DECIMAL_FORMAT).format(currentBidPrice));
-      LOG.info(
-          () ->
-              market.getName()
-                  + " Current ASK price="
-                  + new DecimalFormat(DECIMAL_FORMAT).format(currentAskPrice));
-
-      // Is this the first time the Strategy has been called? If yes, we initialise the OrderState
-      // so we can keep
-      // track of orders during later trace cycles.
-      if (lastOrder == null) {
-        LOG.info(
-            () ->
-                market.getName()
-                    + " First time Strategy has been called - creating new OrderState object.");
-        lastOrder = new OrderState();
-      }
-
-      // Always handy to log what the last order was during each trace cycle.
-      LOG.info(() -> market.getName() + " Last Order was: " + lastOrder);
-
-      // Execute the appropriate algorithm based on the last order type.
-      if (lastOrder.type == OrderType.BUY) {
-        executeAlgoForWhenLastOrderWasBuy();
-
-      } else if (lastOrder.type == OrderType.SELL) {
-        executeAlgoForWhenLastOrderWasSell(currentBidPrice, currentAskPrice);
-
-      } else if (lastOrder.type == null) {
-        executeAlgoForWhenLastOrderWasNone(currentBidPrice);
-      }
+      executeStrategy();
 
     } catch (ExchangeNetworkException e) {
       // Your timeout handling code could go here.
@@ -157,7 +80,6 @@ public class BarrysTradingStrategy implements TradingStrategy {
                   + " Failed to get market orders because Exchange threw network exception. "
                   + "Waiting until next trade cycle.",
           e);
-
     } catch (TradingApiException e) {
       // Your error handling code could go here...
       // We are just going to re-throw as StrategyException for engine to deal with - it will
@@ -171,6 +93,64 @@ public class BarrysTradingStrategy implements TradingStrategy {
     }
   }
 
+  private void executeStrategy()
+          throws ExchangeNetworkException, TradingApiException, StrategyException {
+
+    // Grab the latest order book for the market.
+    final MarketOrderBook orderBook = tradingApi.getMarketOrders(market.getId());
+
+    final List<MarketOrder> buyOrders = orderBook.getBuyOrders();
+    if (buyOrders.isEmpty()) {
+      LOG.warn(() -> "Exchange returned empty Buy Orders. Ignoring this trade window. OrderBook: "
+              + orderBook);
+      return;
+    }
+
+    final List<MarketOrder> sellOrders = orderBook.getSellOrders();
+    if (sellOrders.isEmpty()) {
+      LOG.warn(() -> "Exchange returned empty Sell Orders. Ignoring this trade window. OrderBook: "
+              + orderBook);
+      return;
+    }
+
+    // Get the current BID and ASK spot prices.
+    final BigDecimal currentBidPrice = buyOrders.get(0).getPrice();
+    final BigDecimal currentAskPrice = sellOrders.get(0).getPrice();
+
+    LOG.info(() ->  market.getName()
+            + " Current BID price="
+            + new DecimalFormat(DECIMAL_FORMAT).format(currentBidPrice));
+    LOG.info(() -> market.getName()
+            + " Current ASK price="
+            + new DecimalFormat(DECIMAL_FORMAT).format(currentAskPrice));
+
+    // Is this the first time the Strategy has been called? If yes, we initialise the OrderState
+    // so we can keep track of orders during later trace cycles.
+    if (lastOrder == null) {
+      LOG.info(() -> market.getName()
+             + " First time Strategy has been called - creating new OrderState object.");
+      lastOrder = new OrderState();
+    }
+
+    // Always handy to log what the last order was during each trace cycle.
+    LOG.info(() -> market.getName() + " Last Order was: " + lastOrder);
+
+    // Execute the appropriate algorithm based on the last order type.
+    if (lastOrder.type == null) {
+      executeWhenLastOrderWasNone(currentBidPrice);
+      return;
+    }
+    switch (lastOrder.type) {
+      case BUY:
+        executeWhenLastOrderWasBuy();
+        break;
+      case SELL:
+        executeWhenLastOrderWasSell(currentBidPrice, currentAskPrice);
+        break;
+      default: throw new TradingApiException("Invalid Order type: " + lastOrder.type);
+    }
+  }
+
   /**
    * Algo for executing when the Trading Strategy is invoked for the first time. We start off with a
    * buy order at current BID price.
@@ -179,7 +159,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
    * @throws StrategyException if an unexpected exception is received from the Exchange Adapter.
    *     Throwing this exception indicates we want the Trading Engine to shutdown the bot.
    */
-  private void executeAlgoForWhenLastOrderWasNone(BigDecimal currentBidPrice)
+  private void executeWhenLastOrderWasNone(BigDecimal currentBidPrice)
       throws StrategyException {
     LOG.info(
         () ->
@@ -192,7 +172,8 @@ public class BarrysTradingStrategy implements TradingStrategy {
       // Calculate the amount of base currency (BTC) to buy for given amount of counter currency
       // (USD).
       final BigDecimal amountOfBaseCurrencyToBuy =
-          getAmountOfBaseCurrencyToBuyForGivenCounterCurrencyAmount(counterCurrencyBuyOrderAmount);
+          getAmountOfBaseCurrencyToBuyForGivenCounterCurrencyAmount(
+                  strategyConfig.getCounterCurrencyBuyOrderAmount());
 
       // Send the order to the exchange
       LOG.info(() -> market.getName() + " Sending initial BUY order to exchange --->");
@@ -242,7 +223,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
    * @throws StrategyException if an unexpected exception is received from the Exchange Adapter.
    *     Throwing this exception indicates we want the Trading Engine to shutdown the bot.
    */
-  private void executeAlgoForWhenLastOrderWasBuy() throws StrategyException {
+  private void executeWhenLastOrderWasBuy() throws StrategyException {
     try {
       // Fetch our current open orders and see if the buy order is still outstanding/open on the
       // exchange
@@ -291,11 +272,12 @@ public class BarrysTradingStrategy implements TradingStrategy {
             () ->
                 market.getName()
                     + " Percentage profit (in decimal) to make for the sell order is: "
-                    + minimumPercentageGain);
+                    + strategyConfig.getMinimumPercentageGain());
 
-        final BigDecimal amountToAdd = lastOrder.price.multiply(minimumPercentageGain);
-        LOG.info(
-            () -> market.getName() + " Amount to add to last buy order fill price: " + amountToAdd);
+        final BigDecimal amountToAdd =
+                lastOrder.price.multiply(strategyConfig.getMinimumPercentageGain());
+        LOG.info(() -> market.getName()
+                + " Amount to add to last buy order fill price: " + amountToAdd);
 
         // Most exchanges (if not all) use 8 decimal places.
         // It's usually best to round up the ASK price in your calculations to maximise gains.
@@ -376,7 +358,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
    * @throws StrategyException if an unexpected exception is received from the Exchange Adapter.
    *     Throwing this exception indicates we want the Trading Engine to shutdown the bot.
    */
-  private void executeAlgoForWhenLastOrderWasSell(
+  private void executeWhenLastOrderWasSell(
       BigDecimal currentBidPrice, BigDecimal currentAskPrice) throws StrategyException {
     try {
       final List<OpenOrder> myOrders = tradingApi.getYourOpenOrders(market.getId());
@@ -402,7 +384,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
         // Get amount of base currency (BTC) we can buy for given counter currency (USD) amount.
         final BigDecimal amountOfBaseCurrencyToBuy =
             getAmountOfBaseCurrencyToBuyForGivenCounterCurrencyAmount(
-                counterCurrencyBuyOrderAmount);
+                strategyConfig.getCounterCurrencyBuyOrderAmount());
 
         LOG.info(
             () ->
@@ -550,51 +532,4 @@ public class BarrysTradingStrategy implements TradingStrategy {
     return amountOfBaseCurrencyToBuy;
   }
 
-  /**
-   * Loads the config for the strategy. We expect the 'counter-currency-buy-order-amount' and
-   * 'minimum-percentage-gain' config items to be present in the
-   * {project-root}/config/strategies.yaml config file.
-   *
-   * @param config the config for the Trading Strategy.
-   */
-  private void getConfigForStrategy(StrategyConfig config) {
-
-    // Get counter currency buy amount...
-    final String counterCurrencyBuyOrderAmountFromConfigAsString =
-        config.getConfigItem("counter-currency-buy-order-amount");
-
-    if (counterCurrencyBuyOrderAmountFromConfigAsString == null) {
-      // game over
-      throw new IllegalArgumentException(
-          "Mandatory counter-currency-buy-order-amount value missing in strategy.xml config.");
-    }
-    LOG.info(
-        () ->
-            "<counter-currency-buy-order-amount> from config is: "
-                + counterCurrencyBuyOrderAmountFromConfigAsString);
-
-    // Will fail fast if value is not a number
-    counterCurrencyBuyOrderAmount = new BigDecimal(counterCurrencyBuyOrderAmountFromConfigAsString);
-    LOG.info(() -> "counterCurrencyBuyOrderAmount: " + counterCurrencyBuyOrderAmount);
-
-    // Get min % gain...
-    final String minimumPercentageGainFromConfigAsString =
-        config.getConfigItem("minimum-percentage-gain");
-    if (minimumPercentageGainFromConfigAsString == null) {
-      // game over
-      throw new IllegalArgumentException(
-          "Mandatory minimum-percentage-gain value missing in strategy.xml config.");
-    }
-    LOG.info(
-        () ->
-            "<minimum-percentage-gain> from config is: " + minimumPercentageGainFromConfigAsString);
-
-    // Will fail fast if value is not a number
-    final BigDecimal minimumPercentageGainFromConfig =
-        new BigDecimal(minimumPercentageGainFromConfigAsString);
-    minimumPercentageGain =
-        minimumPercentageGainFromConfig.divide(new BigDecimal(100), 8, RoundingMode.HALF_UP);
-
-    LOG.info(() -> "minimumPercentageGain in decimal is: " + minimumPercentageGain);
-  }
 }
