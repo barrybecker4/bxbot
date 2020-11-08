@@ -21,22 +21,29 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package com.gazbert.bxbot.datastore.yaml;
+package com.gazbert.bxbot.repository.yaml;
+
+import com.gazbert.bxbot.domain.transaction.TransactionEntry;
+import com.gazbert.bxbot.repository.TransactionsRepository;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Locations of YAML files for the entities.
+ * Log transactions made by strategy's to yaml file.
  *
- * @author gazbert
+ * @author Barry Becker
  */
-public final class FileLocations {
+@Repository("transactionYamlRepository")
+@Transactional
+public class TransactionsYamlRepository implements TransactionsRepository {
 
-  public static final String EMAIL_ALERTS_CONFIG_YAML_FILENAME = "config/email-alerts.yaml";
-  public static final String ENGINE_CONFIG_YAML_FILENAME = "config/engine.yaml";
-  public static final String EXCHANGE_CONFIG_YAML_FILENAME = "config/exchange.yaml";
-  public static final String MARKETS_CONFIG_YAML_FILENAME = "config/markets.yaml";
-  public static final String STRATEGIES_CONFIG_YAML_FILENAME = "config/strategies.yaml";
-  public static final String TRANSACTIONS_YAML_FILENAME = "config/transactions.yaml";
+  private static final Logger LOG = LogManager.getLogger();
 
-  private FileLocations() {
+  @Override
+  public TransactionEntry save(TransactionEntry entry) {
+    LOG.info(() -> "About to save TransactionEntry: " + entry);
+    return entry;
   }
 }

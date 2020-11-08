@@ -60,7 +60,7 @@ public class SpringFoxConfig {
     return new ApiInfoBuilder()
         .title("BX-bot REST API")
         .description(
-            "Here is the documentation for using BX-bot's REST API."
+            "Documentation for using BX-bot's REST API."
                 + System.lineSeparator()
                 + System.lineSeparator()
                 + "1. First, you'll need to get a JWT by calling the Authentication '/api/token' "

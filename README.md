@@ -581,13 +581,13 @@ If the size of the logfile exceeds this limit, the end of the file will be trunc
 risks if you decide to extend the expiry time.
 
 #### Users
-You _must_ change the `PASSWORD` values in the 
+Copy [./bxbot-rest-api/src/main/resources/import.example.sql](./bxbot-rest-api/src/main/resources/import.example.sql to import.sql (and do not check it in). You _must_ change the `PASSWORD` values in the 
 [./bxbot-rest-api/src/main/resources/import.sql](./bxbot-rest-api/src/main/resources/import.sql)
-before using the REST API over a public network - see instructions in the file on how to 
+before using the REST API. See instructions in the file on how to 
 [bcrypt](https://en.wikipedia.org/wiki/Bcrypt) your passwords.
 
 2 users have been set up out of the box: `user` and `admin`. These users have `user` and `admin`
-roles respectively. Passwords are the same as the usernames - remember to change these :-)
+roles respectively. The Bcrypted passwords must be set by you in [./bxbot-rest-api/src/main/resources/import.sql](./bxbot-rest-api/src/main/resources/import.sql)
 
 When the bot starts up, Spring Boot will load the `import.sql` file and store the users and their 
 access rights in its [H2](https://www.h2database.com/html/main.html) in-memory database.

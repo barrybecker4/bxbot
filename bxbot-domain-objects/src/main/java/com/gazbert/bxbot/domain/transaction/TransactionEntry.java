@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 gazbert
+ * Copyright (c) 2016 Gareth Jon Lynch
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -21,22 +21,47 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package com.gazbert.bxbot.datastore.yaml;
+package com.gazbert.bxbot.domain.transaction;
+
+import com.google.common.base.MoreObjects;
 
 /**
- * Locations of YAML files for the entities.
+ * Domain object representing a transaction made by a strategy.
  *
- * @author gazbert
+ * @author Barry Becker
  */
-public final class FileLocations {
+public class TransactionEntry {
 
-  public static final String EMAIL_ALERTS_CONFIG_YAML_FILENAME = "config/email-alerts.yaml";
-  public static final String ENGINE_CONFIG_YAML_FILENAME = "config/engine.yaml";
-  public static final String EXCHANGE_CONFIG_YAML_FILENAME = "config/exchange.yaml";
-  public static final String MARKETS_CONFIG_YAML_FILENAME = "config/markets.yaml";
-  public static final String STRATEGIES_CONFIG_YAML_FILENAME = "config/strategies.yaml";
-  public static final String TRANSACTIONS_YAML_FILENAME = "config/transactions.yaml";
+  private String id;
+  private String type; // BUY or SELL
 
-  private FileLocations() {
+
+  public TransactionEntry(String id, String type) {
+    this.id = id;
+    this.type = type;
+  }
+
+  public String getId() {
+    return id;
+  }
+
+  public void setId(String id) {
+    this.id = id;
+  }
+
+  public String getType() {
+    return type;
+  }
+
+  public void setType(String type) {
+    this.type = type;
+  }
+
+  @Override
+  public String toString() {
+    return MoreObjects.toStringHelper(this)
+            .add("id", id)
+            .add("type", type)
+            .toString();
   }
 }

@@ -117,9 +117,13 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         // https://security.stackexchange.com/questions/166724/should-i-use-csrf-protection-on-rest-api-endpoints
         // https://stackoverflow.com/questions/27390407/post-request-to-spring-server-returns-403-forbidden
         .csrf().disable()
-
         .exceptionHandling()
         .authenticationEntryPoint(jwtAuthenticationEntryPoint)
+
+        // needed to access H2 console/ See
+        // https://springframework.guru/using-the-h2-database-console-in-spring-boot-with-spring-security
+        .and()
+        .headers().frameOptions().disable()
 
         // No need to create session as JWT auth is stateless / per request
         .and()
@@ -128,13 +132,15 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
         // Allow anyone to try and authenticate to get a token
         .and()
-        .authorizeRequests()
-        .antMatchers("/api/token")
-        .permitAll()
+        .authorizeRequests().antMatchers("/api/token").permitAll()
 
         // Allow CORS pre-flighting for everything
-        .antMatchers(HttpMethod.OPTIONS, "/**")
-        .permitAll() // allow CORS pre-flighting
+        .antMatchers(HttpMethod.OPTIONS, "/**").permitAll() // allow CORS pre-flighting
+
+        // This is only to access the H2 web console (remove in production)
+        .and()
+        .authorizeRequests().antMatchers("/").permitAll().and()
+        .authorizeRequests().antMatchers("/h2/**").permitAll()
 
         // Allow anyone access to Swagger docs
         .antMatchers(

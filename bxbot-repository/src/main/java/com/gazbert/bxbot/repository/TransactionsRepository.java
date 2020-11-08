@@ -1,7 +1,7 @@
 /*
  * The MIT License (MIT)
  *
- * Copyright (c) 2019 gazbert
+ * Copyright (c) 2016 Gareth Jon Lynch
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -21,22 +21,17 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package com.gazbert.bxbot.datastore.yaml;
+package com.gazbert.bxbot.repository;
+
+import com.gazbert.bxbot.domain.transaction.TransactionEntry;
 
 /**
- * Locations of YAML files for the entities.
+ * The Strategy configuration repository.
  *
- * @author gazbert
+ * @author Barry Becker
  */
-public final class FileLocations {
+public interface TransactionsRepository {
 
-  public static final String EMAIL_ALERTS_CONFIG_YAML_FILENAME = "config/email-alerts.yaml";
-  public static final String ENGINE_CONFIG_YAML_FILENAME = "config/engine.yaml";
-  public static final String EXCHANGE_CONFIG_YAML_FILENAME = "config/exchange.yaml";
-  public static final String MARKETS_CONFIG_YAML_FILENAME = "config/markets.yaml";
-  public static final String STRATEGIES_CONFIG_YAML_FILENAME = "config/strategies.yaml";
-  public static final String TRANSACTIONS_YAML_FILENAME = "config/transactions.yaml";
+  TransactionEntry save(TransactionEntry config);
 
-  private FileLocations() {
-  }
 }
