@@ -49,7 +49,8 @@ public class AuthenticationConfigImpl implements AuthenticationConfig {
    */
   @Override
   public String getItem(String name) {
-    if (!items.containsKey(name)) {
+    String value = items.getOrDefault(name, "");
+    if ("".equals(value)) {
       if ("key".equals(name)) {
         return System.getenv("EXCHANGE_KEY");
       } else if ("secret".equals(name)) {
@@ -58,7 +59,7 @@ public class AuthenticationConfigImpl implements AuthenticationConfig {
         return System.getenv("EXCHANGE_CLIENT_ID");
       }
     }
-    return items.get(name);
+    return value;
   }
 
   Map<String, String> getItems() {
