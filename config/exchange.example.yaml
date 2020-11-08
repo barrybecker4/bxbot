@@ -20,11 +20,9 @@ exchange:
 
   authenticationConfig:
     # Add your Bitstamp trading API credentials here. See https://www.bitstamp.net/api/ - API Authentication.
-    # Alternatively, specify them as bxbot.EXCHANGE_CLIENT_ID, bxbot.EXCHANGE_KEY, bxbot.EXCHANGE_SECRET,
-    # in .gradle/gradle.properties (so as to avoid checking them in)
-    client-id:
-    key:
-    secret:
+    client-id: your-client-id
+    key: your-api-key
+    secret: your-secret-key
 
   networkConfig:
     # This value is in SECONDS. It is the timeout value that the exchange adapter will wait on socket connect/socket read

@@ -170,7 +170,7 @@ It uses [YAML](https://en.wikipedia.org/wiki/YAML) configuration files. These li
 Any config changes require a restart of the bot to take effect.
 
 Sample configurations for running on different exchanges can be found in the 
-[`config/samples`](./config/samples)folder.
+[`config/samples`](./config/samples) folder. Any file in the [`config`](./config) folder with ".example" in its name may contain sensitive information. Add your sensitive information after renaming it without ".example" in the name, and be careful not to check in those files once they contain your sensitive information.
 
 ##### Engine
 The [`engine.yaml`](./config/engine.yaml) file is used to configure the Trading Engine.
