@@ -40,8 +40,24 @@ public class AuthenticationConfigImpl implements AuthenticationConfig {
     items = new HashMap<>();
   }
 
+  /**
+   * If name is "client-id", "key" or "secret" respectively, then we will attempt to get the
+   * values from EXCHANGE_CLIENT_ID, EXCHANGE_KEY or EXCHANGE_SECRET respectively so that
+   * these values do not need to be stored in the yaml files.
+   * @param name the name of the item to fetch.
+   * @return the values for the specified name
+   */
   @Override
   public String getItem(String name) {
+    if (!items.containsKey(name)) {
+      if ("key".equals(name)) {
+        return System.getenv("EXCHANGE_KEY");
+      } else if ("secret".equals(name)) {
+        return System.getenv("EXCHANGE_SECRET");
+      } else if ("client-id".equals(name)) {
+        return System.getenv("EXCHANGE_CLIENT_ID");
+      }
+    }
     return items.get(name);
   }
 

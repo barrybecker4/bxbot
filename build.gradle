@@ -171,6 +171,18 @@ subprojects {
     check.dependsOn jacocoTestCoverageVerification
 }
 
+// Set
+task setEnvVars() {
+    doLast() {
+        println("bxbot.EXCHANGE_CLIENT_ID = " + findProperty("bxbot.EXCHANGE_CLIENT_ID") as String)
+        println("bxbot.EXCHANGE_KEY = " + findProperty("bxbot.EXCHANGE_KEY") as String)
+        ant.project.setProperty('env.EXCHANGE_CLIENT_ID', findProperty("bxbot.EXCHANGE_CLIENT_ID") as String)
+        ant.project.setProperty('env.EXCHANGE_KEY', findProperty("bxbot.EXCHANGE_KEY") as String)
+        ant.project.setProperty('env.EXCHANGE_SECRET', findProperty("bxbot.EXCHANGE_SECRET") as String)
+    }
+}
+build.dependsOn setEnvVars
+
 // TODO: Strip out common stuff into separate method?
 task buildZipDist(type: Zip, dependsOn: build) {
 
