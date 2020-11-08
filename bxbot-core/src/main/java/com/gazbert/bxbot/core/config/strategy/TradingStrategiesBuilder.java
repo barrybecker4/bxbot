@@ -51,6 +51,9 @@ public class TradingStrategiesBuilder {
   private static final Logger LOG = LogManager.getLogger();
   private TradingStrategyFactory tradingStrategyFactory;
 
+  // Set logic only as crude mechanism for checking for duplicate Markets.
+  private final Set<Market> loadedMarkets = new HashSet<>();
+
   @Autowired
   public void setTradingStrategyFactory(TradingStrategyFactory tradingStrategyFactory) {
     this.tradingStrategyFactory = tradingStrategyFactory;
@@ -63,93 +66,109 @@ public class TradingStrategiesBuilder {
       ExchangeAdapter exchangeAdapter) {
 
     final List<TradingStrategy> tradingStrategiesToExecute = new ArrayList<>();
+    final Map<String, StrategyConfig> tradingStrategyConfigs =
+            getStringStrategyConfigMap(strategies);
 
+    // Load em up and create the Strategies
+    for (final MarketConfig market : markets) {
+      TradingStrategy strategy = loadStrategy(exchangeAdapter, tradingStrategyConfigs, market);
+      if (strategy != null) {
+        tradingStrategiesToExecute.add(strategy);
+      }
+    }
+    return tradingStrategiesToExecute;
+  }
+
+  /** Load a single strategy given the exchange adapter and market. */
+  private TradingStrategy loadStrategy(ExchangeAdapter exchangeAdapter,
+       Map<String, StrategyConfig> tradingStrategyConfigs, MarketConfig market) {
+    final Market tradingMarket = getTradingMarket(market);
+    if (tradingMarket == null) {
+      return null;
+    }
+
+    // Get the strategy to use for this Market
+    final String strategyToUse = market.getTradingStrategyId();
+    LOG.info(() -> "Market Trading Strategy Id to use: " + strategyToUse);
+
+    if (tradingStrategyConfigs.containsKey(strategyToUse)) {
+      final StrategyConfig tradingStrategy = tradingStrategyConfigs.get(strategyToUse);
+      final StrategyConfigItems tradingStrategyConfig = new StrategyConfigItems();
+      final Map<String, String> configItems = tradingStrategy.getConfigItems();
+      if (configItems != null && !configItems.isEmpty()) {
+        tradingStrategyConfig.setItems(configItems);
+      } else {
+        LOG.info(
+            () ->
+                "No (optional) configuration has been set for Trading Strategy: "
+                    + strategyToUse);
+      }
+      LOG.info(() -> "StrategyConfigImpl (optional): " + tradingStrategyConfig);
+
+      /*
+       * Load the Trading Strategy impl, instantiate it, set its config, and store in the
+       * Trading Strategy execution list.
+       */
+      final TradingStrategy strategyImpl =
+          tradingStrategyFactory.createTradingStrategy(tradingStrategy);
+      strategyImpl.init(exchangeAdapter, tradingMarket, tradingStrategyConfig);
+
+      LOG.info(
+          () ->
+              "Initialized trading strategy successfully. Name: ["
+                  + tradingStrategy.getName()
+                  + "] Class: "
+                  + tradingStrategy.getClassName());
+
+      return strategyImpl;
+    } else {
+
+      // Game over. Config integrity blown - we can't find strategy.
+      final String errorMsg =
+          "Failed to find matching Strategy for Market "
+              + market
+              + " - The Strategy "
+              + "["
+              + strategyToUse
+              + "] cannot be found in the "
+              + " Strategy Descriptions map: "
+              + tradingStrategyConfigs;
+      LOG.error(() -> errorMsg);
+      throw new IllegalArgumentException(errorMsg);
+    }
+  }
+
+  private Market getTradingMarket(MarketConfig market) {
+    final String marketName = market.getName();
+    if (!market.isEnabled()) {
+      LOG.info(() -> marketName
+              + " market is NOT enabled for trading - skipping to next market...");
+      return null;
+    }
+
+    final Market tradingMarket =
+        new MarketImpl(
+            marketName, market.getId(), market.getBaseCurrency(), market.getCounterCurrency());
+    final boolean wasAdded = loadedMarkets.add(tradingMarket);
+    if (!wasAdded) {
+      final String errorMsg = "Found duplicate Market! Market details: " + market;
+      LOG.fatal(() -> errorMsg);
+      throw new IllegalArgumentException(errorMsg);
+    } else {
+      LOG.info(() ->
+          "Registered Market with Trading Engine: Id="
+          + market.getId() + ", Name=" + marketName);
+    }
+    return tradingMarket;
+  }
+
+  private Map<String, StrategyConfig> getStringStrategyConfigMap(List<StrategyConfig> strategies) {
     // Register the strategies
     final Map<String, StrategyConfig> tradingStrategyConfigs = new HashMap<>();
     for (final StrategyConfig strategy : strategies) {
       tradingStrategyConfigs.put(strategy.getId(), strategy);
       LOG.info(() -> "Registered Trading Strategy with Trading Engine: Id=" + strategy.getId());
     }
-
-    // Set logic only as crude mechanism for checking for duplicate Markets.
-    final Set<Market> loadedMarkets = new HashSet<>();
-
-    // Load em up and create the Strategies
-    for (final MarketConfig market : markets) {
-      final String marketName = market.getName();
-      if (!market.isEnabled()) {
-        LOG.info(
-            () -> marketName + " market is NOT enabled for trading - skipping to next market...");
-        continue;
-      }
-
-      final Market tradingMarket =
-          new MarketImpl(
-              marketName, market.getId(), market.getBaseCurrency(), market.getCounterCurrency());
-      final boolean wasAdded = loadedMarkets.add(tradingMarket);
-      if (!wasAdded) {
-        final String errorMsg = "Found duplicate Market! Market details: " + market;
-        LOG.fatal(() -> errorMsg);
-        throw new IllegalArgumentException(errorMsg);
-      } else {
-        LOG.info(
-            () ->
-                "Registered Market with Trading Engine: Id="
-                    + market.getId()
-                    + ", Name="
-                    + marketName);
-      }
-
-      // Get the strategy to use for this Market
-      final String strategyToUse = market.getTradingStrategyId();
-      LOG.info(() -> "Market Trading Strategy Id to use: " + strategyToUse);
-
-      if (tradingStrategyConfigs.containsKey(strategyToUse)) {
-        final StrategyConfig tradingStrategy = tradingStrategyConfigs.get(strategyToUse);
-        final StrategyConfigItems tradingStrategyConfig = new StrategyConfigItems();
-        final Map<String, String> configItems = tradingStrategy.getConfigItems();
-        if (configItems != null && !configItems.isEmpty()) {
-          tradingStrategyConfig.setItems(configItems);
-        } else {
-          LOG.info(
-              () ->
-                  "No (optional) configuration has been set for Trading Strategy: "
-                      + strategyToUse);
-        }
-        LOG.info(() -> "StrategyConfigImpl (optional): " + tradingStrategyConfig);
-
-        /*
-         * Load the Trading Strategy impl, instantiate it, set its config, and store in the
-         * Trading Strategy execution list.
-         */
-        final TradingStrategy strategyImpl =
-            tradingStrategyFactory.createTradingStrategy(tradingStrategy);
-        strategyImpl.init(exchangeAdapter, tradingMarket, tradingStrategyConfig);
-
-        LOG.info(
-            () ->
-                "Initialized trading strategy successfully. Name: ["
-                    + tradingStrategy.getName()
-                    + "] Class: "
-                    + tradingStrategy.getClassName());
-
-        tradingStrategiesToExecute.add(strategyImpl);
-      } else {
-
-        // Game over. Config integrity blown - we can't find strat.
-        final String errorMsg =
-            "Failed to find matching Strategy for Market "
-                + market
-                + " - The Strategy "
-                + "["
-                + strategyToUse
-                + "] cannot be found in the "
-                + " Strategy Descriptions map: "
-                + tradingStrategyConfigs;
-        LOG.error(() -> errorMsg);
-        throw new IllegalArgumentException(errorMsg);
-      }
-    }
-    return tradingStrategiesToExecute;
+    return tradingStrategyConfigs;
   }
 }
