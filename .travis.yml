@@ -5,7 +5,7 @@ jdk:
 install: true
 
 script:
-  - ./mvnw clean install org.jacoco:jacoco-maven-plugin:prepare-agent org.jacoco:jacoco-maven-plugin:report sonar:sonar -Dmaven.javadoc.skip=true -Pall -Dsonar.projectKey=bxbot -Dsonar.organization=barrybecker4
+  - ./mvnw clean install org.jacoco:jacoco-maven-plugin:prepare-agent org.jacoco:jacoco-maven-plugin:report -Dmaven.javadoc.skip=true -Pall #sonar:sonar -Dsonar.projectKey=bxbot -Dsonar.organization=barrybecker4
 
 # This keeps giving unauthorized, so disabling for now
 #addons:
