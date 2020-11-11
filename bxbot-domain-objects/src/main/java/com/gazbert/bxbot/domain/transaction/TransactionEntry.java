@@ -25,27 +25,48 @@ package com.gazbert.bxbot.domain.transaction;
 
 import com.google.common.base.MoreObjects;
 
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
 /**
  * Domain object representing a transaction made by a strategy.
  *
  * @author Barry Becker
  */
+@Entity
+@Table(name = "TRANSACTIONS")
 public class TransactionEntry {
 
-  private String id;
-  private String type; // BUY or SELL
+  @Id
+  @GeneratedValue
+  private Long id;
 
+  // BUY or SELL
+  private String type;
 
-  public TransactionEntry(String id, String type) {
-    this.id = id;
-    this.type = type;
+  private String market;
+
+  private Double amount;
+
+  /** required no arg constructor. */
+  public TransactionEntry() {
   }
 
-  public String getId() {
+  /** a transaction. */
+  public TransactionEntry(Long id, String type, String market, Double amount) {
+    this.id = id;
+    this.type = type;
+    this.market = market;
+    this.amount = amount;
+  }
+
+  public Long getId() {
     return id;
   }
 
-  public void setId(String id) {
+  public void setId(Long id) {
     this.id = id;
   }
 
@@ -57,11 +78,30 @@ public class TransactionEntry {
     this.type = type;
   }
 
+  public String getMarket() {
+    return market;
+  }
+
+  public void setMarket(String market) {
+    this.market = market;
+  }
+
+  public Double getAmount() {
+    return amount;
+  }
+
+  public void setAmount(Double amount) {
+    this.amount = amount;
+  }
+
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
             .add("id", id)
             .add("type", type)
+            .add("market", market)
+            .add("amount", amount)
             .toString();
   }
 }

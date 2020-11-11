@@ -75,6 +75,7 @@ ext.libraries = [
         javax_mail_sun                  : dependencies.create("com.sun.mail:javax.mail:" + ext.versions.javaxMailVersion),
         javax_xml_api                   : dependencies.create("javax.xml.bind:jaxb-api:" + ext.versions.jaxbVersion),
         javax_xml_impl                  : dependencies.create("com.sun.xml.bind:jaxb-impl:" + ext.versions.jaxbVersion),
+        javax_persistence_api           : dependencies.create("javax.persistence:javax.persistence-api:2.2"),
         snake_yaml                      : dependencies.create("org.yaml:snakeyaml:1.26"),
 
         springfox_swagger2              : dependencies.create("io.springfox:springfox-swagger2:" + ext.versions.springFoxVersion),

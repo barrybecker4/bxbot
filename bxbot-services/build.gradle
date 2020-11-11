@@ -3,6 +3,7 @@ description = 'BX-bot Services'
 dependencies {
 
     compile project(':bxbot-repository')
+    compile project(':bxbot-domain-objects')
 
     compile libraries.spring_tx
     compile libraries.spring_boot_starter

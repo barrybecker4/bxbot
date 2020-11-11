@@ -11,6 +11,7 @@ dependencies {
 //    compile libraries.springfox_swagger_ui
 //    compile libraries.springfox_bean_validators
     compile libraries.swagger_annotations
+    compile libraries.javax_persistence_api
 
     testCompile libraries.spring_boot_starter_test
 }

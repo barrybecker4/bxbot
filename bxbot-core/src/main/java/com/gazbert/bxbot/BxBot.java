@@ -24,6 +24,8 @@
 package com.gazbert.bxbot;
 
 import com.gazbert.bxbot.core.engine.TradingEngine;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -39,6 +41,8 @@ public class BxBot implements CommandLineRunner {
 
   private final TradingEngine tradingEngine;
 
+  private static final Logger log = LoggerFactory.getLogger(BxBot.class);
+
   @Autowired
   public BxBot(TradingEngine tradingEngine) {
     this.tradingEngine = tradingEngine;
@@ -52,4 +56,5 @@ public class BxBot implements CommandLineRunner {
   public void run(String... strings) {
     tradingEngine.start();
   }
+
 }

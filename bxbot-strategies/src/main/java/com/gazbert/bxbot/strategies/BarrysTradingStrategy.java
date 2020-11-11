@@ -1,5 +1,7 @@
 package com.gazbert.bxbot.strategies;
 
+import com.gazbert.bxbot.domain.transaction.TransactionEntry;
+import com.gazbert.bxbot.repository.TransactionsRepository;
 import com.gazbert.bxbot.strategy.api.StrategyConfig;
 import com.gazbert.bxbot.strategy.api.StrategyException;
 import com.gazbert.bxbot.strategy.api.TradingStrategy;
@@ -15,17 +17,21 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.List;
+import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.stereotype.Component;
 
 /**
- * Simple <a href="http://www.investopedia.com/articles/trading/02/081902.asp">scalping strategy</a> to show
- * how to use the Trading API.
+ * Simple <a href="http://www.investopedia.com/articles/trading/02/081902.asp">scalping strategy</a>
+ * to show how to use the Trading API.
  *
  * @author Barry Becker
  */
-@Component("BarrysTradingStrategy") // used to load the strategy using Spring bean injection
+@Configurable
+@Component("barrysTradingStrategy") // used to load the strategy using Spring bean injection
 public class BarrysTradingStrategy implements TradingStrategy {
 
   private static final Logger LOG = LogManager.getLogger();
@@ -40,6 +46,9 @@ public class BarrysTradingStrategy implements TradingStrategy {
 
   private OrderState lastOrder;
 
+  @Autowired
+  private TransactionsRepository transactionRepo;
+
   /**
    * Called once by the Trading Engine when the bot starts up.
    *
@@ -53,7 +62,46 @@ public class BarrysTradingStrategy implements TradingStrategy {
     this.tradingApi = tradingApi;
     this.market = market;
     strategyConfig = new BarrysTradingStrategyConfig(config);
-    LOG.info(() -> "Trading Strategy initialised successfully!");
+    LOG.info(() -> "Barry's Trading Strategy was initialised successfully!");
+    demoDb();
+  }
+
+  /**
+   * Exercises the db.
+   */
+  public void demoDb() {
+    if (transactionRepo == null) {
+      LOG.info(() -> "No TransactionRepo!!!!!!!!");
+      return;
+    }
+    transactionRepo.save(new TransactionEntry(1L,"Jack", "Bauer", 1.234));
+    transactionRepo.save(new TransactionEntry(2L, "Chloe", "O'Brian", 2.345));
+    transactionRepo.save(new TransactionEntry(3L, "Kim", "Bauer", 3.456));
+    transactionRepo.save(new TransactionEntry(4L, "David", "Palmer", 4.567));
+    transactionRepo.save(new TransactionEntry(5L, "Michelle", "Dessler", 5.678));
+
+    // fetch all transactions
+    LOG.info(() -> "Transactions found with findAll():");
+    LOG.info(() -> "-------------------------------");
+    for (TransactionEntry txn : transactionRepo.findAll()) {
+      LOG.info(txn::toString);
+    }
+    LOG.info(() -> "");
+
+    // fetch an individual customer by ID
+    Optional<TransactionEntry> txn = transactionRepo.findById(1L);
+    LOG.info(() -> "Transaction found with findById(1L):");
+    LOG.info(() -> "--------------------------------");
+    LOG.info(txn::toString);
+    LOG.info(() -> "");
+
+    // fetch customers by last name
+    LOG.info(() -> "Transaction found with findByType('Bauer'):");
+    LOG.info(() -> "--------------------------------------------");
+    transactionRepo.findByType("Bauer").forEach(bauer -> {
+      LOG.info(bauer::toString);
+    });
+    LOG.info(() -> "");
   }
 
   /**
@@ -73,7 +121,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
 
     } catch (ExchangeNetworkException e) {
       // Your timeout handling code could go here.
-      // We are just going to log it and swallow it, and wait for next trade cycle.
+      // We are just going to LOG.it and swallow it, and wait for next trade cycle.
       LOG.error(
           () ->
               market.getName()
@@ -132,7 +180,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
       lastOrder = new OrderState();
     }
 
-    // Always handy to log what the last order was during each trace cycle.
+    // Always handy to LOG.what the last order was during each trace cycle.
     LOG.info(() -> market.getName() + " Last Order was: " + lastOrder);
 
     // Execute the appropriate algorithm based on the last order type.
@@ -193,7 +241,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
     } catch (ExchangeNetworkException e) {
       // Your timeout handling code could go here, e.g. you might want to check if the order
       // actually made it to the exchange? And if not, resend it...
-      // We are just going to log it and swallow it, and wait for next trade cycle.
+      // We are just going to LOG.it and swallow it, and wait for next trade cycle.
       LOG.error(
           () ->
               market.getName()
@@ -324,7 +372,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
       // Your timeout handling code could go here, e.g. you might want to check if the order
       // actually
       // made it to the exchange? And if not, resend it...
-      // We are just going to log it and swallow it, and wait for next trade cycle.
+      // We are just going to LOG.it and swallow it, and wait for next trade cycle.
       LOG.error(
           () ->
               market.getName()

@@ -6,7 +6,9 @@ public class TestBCrypt {
 
   private static final BCryptPasswordEncoder ENCODER = new BCryptPasswordEncoder();
 
-  /** Generate an encrypted pw */
+  /**
+   * Generate an encrypted password.
+   */
   public static void main(String[] args) {
 
     encrypt("some string to encrypt");

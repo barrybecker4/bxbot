@@ -24,14 +24,20 @@
 package com.gazbert.bxbot.repository;
 
 import com.gazbert.bxbot.domain.transaction.TransactionEntry;
+import java.util.List;
+import java.util.Optional;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.stereotype.Repository;
 
 /**
  * The Strategy configuration repository.
  *
  * @author Barry Becker
- */
-public interface TransactionsRepository {
+*/
+@Repository
+public interface TransactionsRepository extends CrudRepository<TransactionEntry, Long> {
 
-  TransactionEntry save(TransactionEntry config);
+  List<TransactionEntry> findByType(String type);
 
+  Optional<TransactionEntry> findById(long id);
 }
