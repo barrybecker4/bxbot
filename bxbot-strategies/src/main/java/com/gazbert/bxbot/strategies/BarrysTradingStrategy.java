@@ -69,7 +69,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
   /**
    * Exercises the db.
    */
-  public void demoDb() {
+  private void demoDb() {
     if (transactionRepo == null) {
       LOG.info(() -> "No TransactionRepo!!!!!!!!");
       return;

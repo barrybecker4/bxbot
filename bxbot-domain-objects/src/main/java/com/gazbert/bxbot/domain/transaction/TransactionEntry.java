@@ -24,7 +24,6 @@
 package com.gazbert.bxbot.domain.transaction;
 
 import com.google.common.base.MoreObjects;
-
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;

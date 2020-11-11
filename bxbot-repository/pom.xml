@@ -54,6 +54,10 @@
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-data-jpa</artifactId>
+    </dependency>
 
     <!--
     Testing dependencies
@@ -119,7 +123,7 @@
                     <limit>
                       <counter>LINE</counter>
                       <value>COVEREDRATIO</value>
-                      <minimum>0.8</minimum>
+                      <minimum>0.7</minimum>
                     </limit>
                   </limits>
                 </rule>
