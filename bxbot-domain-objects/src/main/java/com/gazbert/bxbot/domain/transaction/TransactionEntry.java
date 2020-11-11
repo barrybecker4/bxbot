@@ -26,6 +26,7 @@ package com.gazbert.bxbot.domain.transaction;
 import com.google.common.base.MoreObjects;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
@@ -39,7 +40,7 @@ import javax.persistence.Table;
 public class TransactionEntry {
 
   @Id
-  @GeneratedValue
+  @GeneratedValue(strategy = GenerationType.AUTO)
   private Long id;
 
   // BUY or SELL
@@ -54,8 +55,7 @@ public class TransactionEntry {
   }
 
   /** a transaction. */
-  public TransactionEntry(Long id, String type, String market, Double amount) {
-    this.id = id;
+  public TransactionEntry(String type, String market, Double amount) {
     this.type = type;
     this.market = market;
     this.amount = amount;
@@ -65,42 +65,25 @@ public class TransactionEntry {
     return id;
   }
 
-  public void setId(Long id) {
-    this.id = id;
-  }
-
   public String getType() {
     return type;
-  }
-
-  public void setType(String type) {
-    this.type = type;
   }
 
   public String getMarket() {
     return market;
   }
 
-  public void setMarket(String market) {
-    this.market = market;
-  }
-
   public Double getAmount() {
     return amount;
   }
 
-  public void setAmount(Double amount) {
-    this.amount = amount;
-  }
-
-
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-            .add("id", id)
-            .add("type", type)
-            .add("market", market)
-            .add("amount", amount)
-            .toString();
+      .add("id", id)
+      .add("type", type)
+      .add("market", market)
+      .add("amount", amount)
+      .toString();
   }
 }

@@ -34,6 +34,16 @@ class OrderState {
    */
   public BigDecimal amount = BigDecimal.ZERO;
 
+  public OrderState() {
+  }
+
+  public OrderState(String id, OrderType type, BigDecimal price, BigDecimal amount) {
+    this.id = id;
+    this.type = type;
+    this.price = price;
+    this.amount = amount;
+  }
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
