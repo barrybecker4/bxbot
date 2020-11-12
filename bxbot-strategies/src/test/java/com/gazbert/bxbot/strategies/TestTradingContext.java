@@ -57,8 +57,6 @@ public class TestTradingContext {
     expect(tradingApi.getMarketOrders(MARKET_ID)).andReturn(marketOrderBook).anyTimes();
     expect(market.getName()).andReturn("BTC_USD").anyTimes();
     expect(market.getId()).andReturn(MARKET_ID).anyTimes();
-
-    //expect(marketOrderBook.getSellOrders()).andReturn(marketSellOrders);
   }
 
   /*
