@@ -59,6 +59,17 @@ public class TestTradingContext {
     expect(market.getId()).andReturn(MARKET_ID).anyTimes();
   }
 
+  @Test
+  public void testMarketName() {
+    replay(market);
+
+    final TradingContext context = new TradingContext(tradingApi, market);
+    context.getMarketName();
+    assertEquals(context.getMarketName(), "BTC_USD");
+
+    verify(market);
+  }
+
   /*
    * Tests buy orders.
    */
@@ -67,30 +78,30 @@ public class TestTradingContext {
 
     expect(marketOrderBook.getBuyOrders()).andReturn(marketBuyOrders);
 
-    replay(market, tradingApi, config, marketBuyOrder, marketSellOrder);
+    replay(market, tradingApi, config, marketOrderBook, marketBuyOrder, marketSellOrder);
 
     final TradingContext context = new TradingContext(tradingApi, market);
     List<MarketOrder> orders = context.getBuyOrders();
-    //assertEquals(marketBuyOrders, orders);
+    assertEquals(marketBuyOrders, orders);
 
-    verify(market, tradingApi, config, marketBuyOrder, marketSellOrder);
+    verify(market, tradingApi, config, marketOrderBook, marketBuyOrder, marketSellOrder);
   }
 
   /*
-   * Tests buy orders.
+   * Tests sell orders.
    */
   @Test
   public void testGetSellOrders() throws Exception {
 
     expect(marketOrderBook.getSellOrders()).andReturn(marketSellOrders);
 
-    replay(market, tradingApi, config, marketBuyOrder, marketSellOrder);
+    replay(market, tradingApi, config, marketOrderBook, marketBuyOrder, marketSellOrder);
 
     final TradingContext context = new TradingContext(tradingApi, market);
-    List<MarketOrder> orders = context.getBuyOrders();
-    //assertEquals(marketSellOrders, orders);
+    List<MarketOrder> orders = context.getSellOrders();
+    assertEquals(marketSellOrders, orders);
 
-    verify(market, tradingApi, config, marketBuyOrder, marketSellOrder);
+    verify(market, tradingApi, config, marketOrderBook, marketBuyOrder, marketSellOrder);
   }
 
 }
