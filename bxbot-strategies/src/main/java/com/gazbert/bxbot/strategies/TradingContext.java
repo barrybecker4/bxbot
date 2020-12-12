@@ -106,7 +106,7 @@ public class TradingContext {
    * @throws TradingApiException if an unexpected error occurred contacting the exchange.
    * @throws ExchangeNetworkException if a request to the exchange has timed out.
    */
-  public BigDecimal getAmountOfBaseCurrencyToBuyGivenCounterCurrency(
+  public BigDecimal getAmountOfBaseCurrencyToBuy(
           BigDecimal amountOfCounterCurrencyToTrade)
           throws TradingApiException, ExchangeNetworkException {
 

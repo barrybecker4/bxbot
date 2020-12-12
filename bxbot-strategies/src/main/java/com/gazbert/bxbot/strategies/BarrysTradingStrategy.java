@@ -201,7 +201,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
     try {
       // Calculate amount of base currency (BTC) to buy for given amount of counter currency (USD).
       final BigDecimal amountOfBaseCurrencyToBuy =
-          context.getAmountOfBaseCurrencyToBuyGivenCounterCurrency(
+          context.getAmountOfBaseCurrencyToBuy(
                   strategyConfig.getCounterCurrencyBuyOrderAmount());
 
       lastOrder = context.sendBuyOrder(amountOfBaseCurrencyToBuy, currentBidPrice);
@@ -295,7 +295,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
 
         // Get amount of base currency (BTC) we can buy for given counter currency (USD) amount.
         final BigDecimal amountOfBaseCurrencyToBuy =
-            context.getAmountOfBaseCurrencyToBuyGivenCounterCurrency(
+            context.getAmountOfBaseCurrencyToBuy(
                 strategyConfig.getCounterCurrencyBuyOrderAmount());
 
         lastOrder = context.sendBuyOrder(amountOfBaseCurrencyToBuy, currentBidPrice);
