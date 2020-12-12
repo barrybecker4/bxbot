@@ -24,6 +24,12 @@ import org.springframework.stereotype.Component;
  * Simple <a href="http://www.investopedia.com/articles/trading/02/081902.asp">scalping strategy</a>
  * to show how to use the Trading API.
  *
+ * <p>
+ * To run:
+ *    ./gradlew clean build
+ * To view record of transactions in db:
+ * </p>
+ *
  * @author Barry Becker
  */
 @Configurable
@@ -60,7 +66,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
     this.context = context;
     strategyConfig = new BarrysTradingStrategyConfig(config);
     LOG.info(() -> "Barry's Trading Strategy was initialised successfully!");
-    demoDb();
+    demoDb(); // temporary for testing the recording of transactions
   }
 
   /**
@@ -68,7 +74,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
    */
   private void demoDb() {
     if (transactionRepo == null) {
-      LOG.info(() -> "No TransactionRepo!!!!!!!!");
+      LOG.info(() -> "No TransactionRepo!!");
       return;
     }
     transactionRepo.save(new TransactionEntry("Jack", "Bauer", 1.234));

@@ -76,6 +76,7 @@ public class BarrysTradingStrategyConfig {
     // Will fail fast if value is not a number
     final BigDecimal minimumPercentageGainFromConfig =
             new BigDecimal(minimumPercentageGainFromConfigAsString);
-    return minimumPercentageGainFromConfig.divide(new BigDecimal(100), 8, RoundingMode.HALF_UP);
+    return minimumPercentageGainFromConfig
+            .divide(new BigDecimal(100), 8, RoundingMode.HALF_UP);
   }
 }

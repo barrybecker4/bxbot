@@ -33,6 +33,13 @@ import javax.persistence.Table;
 /**
  * Domain object representing a transaction made by a strategy.
  *
+ *<p>
+ *  Fields to add:
+ *   timestamp
+ *   counter currency
+ *   base currency
+ *</p>
+ *
  * @author Barry Becker
  */
 @Entity
@@ -46,6 +53,7 @@ public class TransactionEntry {
   // BUY or SELL
   private String type;
 
+  // the market that the transaction occurred on
   private String market;
 
   private Double amount;

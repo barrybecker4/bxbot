@@ -151,12 +151,14 @@ public class TestTradingContext {
 
     expect(tradingApi.getYourOpenOrders(MARKET_ID)).andReturn(openOrders);
 
-    replay(market, tradingApi, config, marketOrderBook, marketBuyOrder, marketSellOrder, order1, order2);
+    replay(market, tradingApi, config, marketOrderBook, marketBuyOrder, marketSellOrder,
+            order1, order2);
 
     final TradingContext context = new TradingContext(tradingApi, market);
     assertTrue(context.isOrderOpen("234"));
 
-    verify(market, tradingApi, config, marketOrderBook, marketBuyOrder, marketSellOrder, order1, order2);
+    verify(market, tradingApi, config, marketOrderBook, marketBuyOrder, marketSellOrder,
+            order1, order2);
   }
 
   /*
