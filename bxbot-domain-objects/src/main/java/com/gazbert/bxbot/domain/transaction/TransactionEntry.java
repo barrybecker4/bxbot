@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -48,9 +49,8 @@ public class TransactionEntry {
 
   public enum Status { SENT, FILLED }
 
-  // There is a spotbugs multi-threaded warning if this is static
-  private final DateFormat dateFormat =
-          new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+  private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
+
 
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
@@ -74,7 +74,8 @@ public class TransactionEntry {
   // the bid or ask price (depending on whether this order is buy or sell) in the counter currency.
   private Double price;
 
-  // when this transaction was SENT or FILLED (with resolution of trading cylce)
+  // when this transaction was SENT or FILLED (with resolution of trading cycle)
+  @Basic
   @Temporal(TemporalType.TIMESTAMP)
   private Date timestamp;
 
@@ -138,6 +139,12 @@ public class TransactionEntry {
 
   @Override
   public String toString() {
+    assert (type != null);
+    assert (status != null);
+    assert (amount != null);
+    assert (price != null);
+    assert (timestamp != null);
+
     return MoreObjects.toStringHelper(this)
       .add("id", id)
       .add("orderId", orderId)
@@ -147,7 +154,7 @@ public class TransactionEntry {
       .add("amount", amount)
       .add("price", price)
       .add("total", amount * price)
-      .add("date", dateFormat.format(timestamp))
+      .add("timestamp", new SimpleDateFormat(DATE_FORMAT).format(timestamp))
       .toString();
   }
 }

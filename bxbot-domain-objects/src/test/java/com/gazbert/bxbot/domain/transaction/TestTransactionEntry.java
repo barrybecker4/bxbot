@@ -2,6 +2,7 @@ package com.gazbert.bxbot.domain.transaction;
 
 import static com.gazbert.bxbot.domain.transaction.TransactionEntry.Status.SENT;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 import java.util.Date;
@@ -22,6 +23,7 @@ public class TestTransactionEntry {
     assertEquals("Jack Bauer", entry.getMarket());
     assertEquals(0.234, entry.getAmount(), 0.001);
     assertEquals(345.01, entry.getPrice(), 0.001);
+    assertNotNull(entry.getTimestamp());
   }
 
   @Test
@@ -32,7 +34,7 @@ public class TestTransactionEntry {
 
     assertEquals("TransactionEntry{id=null, orderId=42, "
                     + "type=BUY, status=SENT, market=Jack Bauer, amount=0.2, "
-                    + "price=345.0, total=69.0, date=2020-12-13 07:09:01.600}",
+                    + "price=345.0, total=69.0, timestamp=2020-12-13 07:09:01.600}",
             entry.toString());
   }
 }

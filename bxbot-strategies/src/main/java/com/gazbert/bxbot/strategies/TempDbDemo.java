@@ -22,7 +22,6 @@ public class TempDbDemo {
       LOG.info(() -> "No TransactionRepo!!");
       return;
     }
-    transactionRepo.save(new TransactionEntry());
     transactionRepo.save(new TransactionEntry("42", "BUY", SENT,
             "Jack Bauer", 0.234, 345.0));
     transactionRepo.save(new TransactionEntry("27", "SELL", SENT,

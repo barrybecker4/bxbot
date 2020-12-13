@@ -5,7 +5,7 @@
  - ./gradlew buildTarGzipDist   (custom yaml files in config dir and will go in the bundle)
  - cd build/distributions
  - tar -xzf bxbot-app-1.0.1.tar.gz
- - cd bxbox-app-1.0.1
+ - cd bxbot-app-1.0.1
  - ./bxbot.sh start
  - For successive times do: ./gradlew clean build buildTarGzipDist
    
