@@ -47,7 +47,10 @@ import javax.persistence.TemporalType;
 @Table(name = "TRANSACTIONS")
 public class TransactionEntry {
 
-  public enum Status { SENT, FILLED }
+  public enum Status {
+    SENT,
+    FILLED
+  }
 
   private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
 

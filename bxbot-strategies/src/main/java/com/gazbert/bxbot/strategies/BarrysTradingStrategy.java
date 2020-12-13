@@ -39,7 +39,6 @@ public class BarrysTradingStrategy implements TradingStrategy {
   private BarrysTradingStrategyConfig strategyConfig;
   private OrderState lastOrder;
 
-  // Move this to TradingContext
   @Autowired
   private TransactionsRepository transactionRepo;
 
@@ -94,6 +93,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
     final List<MarketOrder> sellOrders = context.getSellOrders();
 
     if (!hasOrders("Buy", buyOrders) || !hasOrders("Sell", sellOrders)) {
+      LOG.info(() -> "No buy or sell orders (maybe market is closed)");
       return;
     }
 
