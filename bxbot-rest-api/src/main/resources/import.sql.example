@@ -7,6 +7,7 @@
 --
 -- An example of using BCryptPasswordEncoder can be found here:
 -- https://www.mkyong.com/spring-security/spring-security-password-hashing-example/
+-- You can also use TestBCrypt in test package to do generate the encrypted values.
 --
 -- DO NOT use online bcrypt password generators unless you want to risk having your passwords harvested!
 --

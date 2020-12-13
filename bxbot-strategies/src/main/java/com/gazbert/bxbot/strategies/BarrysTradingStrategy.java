@@ -24,12 +24,6 @@ import org.springframework.stereotype.Component;
  * Simple <a href="http://www.investopedia.com/articles/trading/02/081902.asp">scalping strategy</a>
  * to show how to use the Trading API.
  *
- * <p>
- * To run:
- *    ./gradlew clean build
- * To view record of transactions in db:
- * </p>
- *
  * @author Barry Becker
  */
 @Configurable
