@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 import javax.persistence.Basic;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -53,6 +54,8 @@ public class TransactionEntry {
   }
 
   private static final String DATE_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
+  // timestamps use California time
+  private static final TimeZone TIME_ZONE = TimeZone.getTimeZone("PST");
 
 
   @Id
@@ -148,6 +151,9 @@ public class TransactionEntry {
     assert (price != null);
     assert (timestamp != null);
 
+    DateFormat format = new SimpleDateFormat(DATE_FORMAT);
+    format.setTimeZone(TIME_ZONE);
+
     return MoreObjects.toStringHelper(this)
       .add("id", id)
       .add("orderId", orderId)
@@ -157,7 +163,7 @@ public class TransactionEntry {
       .add("amount", amount)
       .add("price", price)
       .add("total", amount * price)
-      .add("timestamp", new SimpleDateFormat(DATE_FORMAT).format(timestamp))
+      .add("timestamp", format.format(timestamp))
       .toString();
   }
 }
