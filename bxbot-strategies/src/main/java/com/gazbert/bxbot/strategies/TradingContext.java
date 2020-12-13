@@ -81,7 +81,7 @@ public class TradingContext {
   }
 
   /**
-   * Exampine current market orders to see if specified order is open.
+   * Examine current market orders to see if specified order is open.
    * @return true if the specified order is still outstanding/open on the exchange.
    */
   public boolean isOrderOpen(String orderId)

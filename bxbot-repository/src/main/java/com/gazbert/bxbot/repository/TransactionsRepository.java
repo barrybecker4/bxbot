@@ -39,5 +39,7 @@ public interface TransactionsRepository extends CrudRepository<TransactionEntry,
 
   List<TransactionEntry> findByType(String type);
 
+  List<TransactionEntry> findByMarket(String market);
+
   Optional<TransactionEntry> findById(long id);
 }

@@ -24,21 +24,21 @@
 package com.gazbert.bxbot.domain.transaction;
 
 import com.google.common.base.MoreObjects;
+import java.math.BigDecimal;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+
 
 /**
  * Domain object representing a transaction made by a strategy.
- *
- *<p>
- *  Fields to add:
- *   timestamp
- *   counter currency
- *   base currency
- *</p>
  *
  * @author Barry Becker
  */
@@ -46,35 +46,73 @@ import javax.persistence.Table;
 @Table(name = "TRANSACTIONS")
 public class TransactionEntry {
 
+  public enum Status { SENT, FILLED }
+
+  private static final DateFormat DATE_FORMAT =
+          new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
   private Long id;
 
+  // id of the order on the exchange
+  private String orderId;
+
   // BUY or SELL
   private String type;
+
+  // Status is either SENT or FILLED. Not all sent orders will necessarily fill.
+  private String status;
 
   // the market that the transaction occurred on
   private String market;
 
+  // the base currency to buy or sell (if the order gets filled).
   private Double amount;
+
+  // the bid or ask price (depending on whether this order is buy or sell) in the counter currency.
+  private Double price;
+
+  // when this transaction was SENT or FILLED (with resolution of trading cylce)
+  @Temporal(TemporalType.TIMESTAMP)
+  private Date timestamp;
+
 
   /** required no arg constructor. */
   public TransactionEntry() {
   }
 
   /** a transaction. */
-  public TransactionEntry(String type, String market, Double amount) {
+  public TransactionEntry(String orderId, String type, Status status,
+                          String market, Double amount, Double price) {
+    this.orderId = orderId;
     this.type = type;
+    this.status = status.toString();
     this.market = market;
+    this.price = price;
     this.amount = amount;
+    this.timestamp = new Date();
+  }
+
+  public TransactionEntry(String orderId, String type, Status status,
+                          String market, BigDecimal amount, BigDecimal price) {
+    this(orderId, type, status, market, amount.doubleValue(), price.doubleValue());
   }
 
   public Long getId() {
     return id;
   }
 
+  public String getOrderId() {
+    return orderId;
+  }
+
   public String getType() {
     return type;
+  }
+
+  public String getStatus() {
+    return status;
   }
 
   public String getMarket() {
@@ -85,13 +123,30 @@ public class TransactionEntry {
     return amount;
   }
 
+  public Double getPrice() {
+    return price;
+  }
+
+  public Date getTimestamp() {
+    return timestamp;
+  }
+
+  void setTimestamp(Date timestamp) {
+    this.timestamp = timestamp;
+  }
+
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
       .add("id", id)
+      .add("orderId", orderId)
       .add("type", type)
+      .add("status", status)
       .add("market", market)
       .add("amount", amount)
+      .add("price", price)
+      .add("total", amount * price)
+      .add("date", DATE_FORMAT.format(timestamp))
       .toString();
   }
 }

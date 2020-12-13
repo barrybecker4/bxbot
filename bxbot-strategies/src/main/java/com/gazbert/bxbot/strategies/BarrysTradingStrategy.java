@@ -1,5 +1,8 @@
 package com.gazbert.bxbot.strategies;
 
+import static com.gazbert.bxbot.domain.transaction.TransactionEntry.Status.FILLED;
+import static com.gazbert.bxbot.domain.transaction.TransactionEntry.Status.SENT;
+
 import com.gazbert.bxbot.domain.transaction.TransactionEntry;
 import com.gazbert.bxbot.repository.TransactionsRepository;
 import com.gazbert.bxbot.strategy.api.StrategyConfig;
@@ -13,12 +16,12 @@ import com.gazbert.bxbot.trading.api.TradingApiException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
-import java.util.Optional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.stereotype.Component;
+
 
 /**
  * Simple <a href="http://www.investopedia.com/articles/trading/02/081902.asp">scalping strategy</a>
@@ -60,45 +63,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
     this.context = context;
     strategyConfig = new BarrysTradingStrategyConfig(config);
     LOG.info(() -> "Barry's Trading Strategy was initialised successfully!");
-    demoDb(); // temporary for testing the recording of transactions
-  }
-
-  /**
-   * Exercises the db.
-   */
-  private void demoDb() {
-    if (transactionRepo == null) {
-      LOG.info(() -> "No TransactionRepo!!");
-      return;
-    }
-    transactionRepo.save(new TransactionEntry("Jack", "Bauer", 1.234));
-    transactionRepo.save(new TransactionEntry("Chloe", "O'Brian", 2.345));
-    transactionRepo.save(new TransactionEntry("Kim", "Bauer", 3.456));
-    transactionRepo.save(new TransactionEntry("David", "Palmer", 4.567));
-    transactionRepo.save(new TransactionEntry("Michelle", "Dessler", 5.678));
-
-    // fetch all transactions
-    LOG.info(() -> "Transactions found with findAll():");
-    LOG.info(() -> "-------------------------------");
-    for (TransactionEntry txn : transactionRepo.findAll()) {
-      LOG.info(txn::toString);
-    }
-    LOG.info(() -> "");
-
-    // fetch an individual customer by ID
-    Optional<TransactionEntry> txn = transactionRepo.findById(1L);
-    LOG.info(() -> "Transaction found with findById(1L):");
-    LOG.info(() -> "--------------------------------");
-    LOG.info(txn::toString);
-    LOG.info(() -> "");
-
-    // fetch customers by last name
-    LOG.info(() -> "Transaction found with findByType('Bauer'):");
-    LOG.info(() -> "--------------------------------------------");
-    transactionRepo.findByType("Bauer").forEach(bauer -> {
-      LOG.info(bauer::toString);
-    });
-    LOG.info(() -> "");
+    TempDbDemo.demoDb(transactionRepo);
   }
 
   /**
@@ -205,7 +170,9 @@ public class BarrysTradingStrategy implements TradingStrategy {
                   strategyConfig.getCounterCurrencyBuyOrderAmount());
 
       lastOrder = context.sendBuyOrder(amountOfBaseCurrencyToBuy, currentBidPrice);
-      transactionRepo.save(new TransactionEntry("Jack", "Bauer", 1.234));
+      transactionRepo.save(
+              new TransactionEntry(lastOrder.id, lastOrder.type.getStringValue(), SENT,
+                      context.getMarketName(), amountOfBaseCurrencyToBuy, currentBidPrice));
 
     } catch (ExchangeNetworkException e) {
       handleExchangeNetworkException("Initial Order to BUY base currency failed", e);
@@ -231,6 +198,9 @@ public class BarrysTradingStrategy implements TradingStrategy {
         LOG.info(() -> context.getMarketName()
                 + " ^^^ Yay!!! Last BUY Order Id [" + lastOrder.id + "] filled at ["
                 + lastOrder.price + "]");
+        transactionRepo.save(
+                new TransactionEntry(lastOrder.id, lastOrder.type.getStringValue(), FILLED,
+                        context.getMarketName(), lastOrder.amount, lastOrder.price));
 
         /*
          * The last buy order was filled, so lets see if we can send a new sell order.
@@ -262,6 +232,9 @@ public class BarrysTradingStrategy implements TradingStrategy {
             lastOrder.price.add(amountToAdd).setScale(8, RoundingMode.HALF_UP);
 
         lastOrder = context.sendSellOrder(lastOrder.amount, newAskPrice);
+        transactionRepo.save(
+                new TransactionEntry(lastOrder.id, lastOrder.type.getStringValue(), SENT,
+                        context.getMarketName(), lastOrder.amount, newAskPrice));
       } else {
         logBuyNotFilledYet();
       }
@@ -292,6 +265,9 @@ public class BarrysTradingStrategy implements TradingStrategy {
         LOG.info(() -> context.getMarketName()
                     + " ^^^ Yay!!! Last SELL Order Id ["
                     + lastOrder.id + "] filled at [" + lastOrder.price + "]");
+        transactionRepo.save(
+                new TransactionEntry(lastOrder.id, lastOrder.type.getStringValue(), FILLED,
+                        context.getMarketName(), lastOrder.amount, lastOrder.price));
 
         // Get amount of base currency (BTC) we can buy for given counter currency (USD) amount.
         final BigDecimal amountOfBaseCurrencyToBuy =
@@ -299,6 +275,9 @@ public class BarrysTradingStrategy implements TradingStrategy {
                 strategyConfig.getCounterCurrencyBuyOrderAmount());
 
         lastOrder = context.sendBuyOrder(amountOfBaseCurrencyToBuy, currentBidPrice);
+        transactionRepo.save(
+                new TransactionEntry(lastOrder.id, lastOrder.type.getStringValue(), SENT,
+                        context.getMarketName(), amountOfBaseCurrencyToBuy, currentBidPrice));
       } else {
         logSellOrderNotFilledYet(currentAskPrice);
       }

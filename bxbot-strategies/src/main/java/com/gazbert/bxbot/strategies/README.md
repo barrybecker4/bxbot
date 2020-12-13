@@ -8,13 +8,13 @@
  - cd bxbox-app-1.0.1
  - ./bxbot.sh start
  - For successive times do: ./gradlew clean build buildTarGzipDist
- - To view record of transactions in db:
-   - Look in the h2 db (see local application.properties for instructions how to view in browser)
-   - H2 data persisted in ~/.h2
    
 ### Output:
 
- Look in build/distributions/bxbox-app-1.0.1/logs/bxbot.log
+ - Look in build/distributions/bxbox-app-1.0.1/logs/bxbot.log
+ - To view record of transactions in db:
+    - Look in the h2 db (see local application.properties for instructions how to view in browser)
+    - H2 data persisted in ~/.h2
  
 ### Use REST API: http://localhost:8080/swagger-ui.html
  - Since the H2 is now persistent, only once, 
