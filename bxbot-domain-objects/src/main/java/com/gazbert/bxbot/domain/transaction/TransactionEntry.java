@@ -48,7 +48,8 @@ public class TransactionEntry {
 
   public enum Status { SENT, FILLED }
 
-  private static final DateFormat DATE_FORMAT =
+  // There is a spotbugs multi-threaded warning if this is static
+  private final DateFormat dateFormat =
           new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
 
   @Id
@@ -128,7 +129,7 @@ public class TransactionEntry {
   }
 
   public Date getTimestamp() {
-    return timestamp;
+    return new Date(timestamp.getTime());
   }
 
   void setTimestamp(Date timestamp) {
@@ -146,7 +147,7 @@ public class TransactionEntry {
       .add("amount", amount)
       .add("price", price)
       .add("total", amount * price)
-      .add("date", DATE_FORMAT.format(timestamp))
+      .add("date", dateFormat.format(timestamp))
       .toString();
   }
 }
