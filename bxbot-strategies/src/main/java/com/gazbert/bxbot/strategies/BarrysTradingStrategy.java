@@ -58,7 +58,8 @@ public class BarrysTradingStrategy implements TradingStrategy {
   /**
    * Used by tests.
    */
-  public void init(TradingContext context, StrategyConfig config, TransactionsRepository transactionRepo) {
+  public void init(TradingContext context, StrategyConfig config,
+                   TransactionsRepository transactionRepo) {
     this.context = context;
     strategyConfig = new BarrysTradingStrategyConfig(config);
     this.transactionRepo = transactionRepo;

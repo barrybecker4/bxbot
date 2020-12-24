@@ -170,15 +170,19 @@ public class TransactionEntry {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     TransactionEntry that = (TransactionEntry) o;
-    return orderId.equals(that.orderId) &&
-            type.equals(that.type) &&
-            status.equals(that.status) &&
-            market.equals(that.market) &&
-            amount.equals(that.amount) &&
-            price.equals(that.price);
+    return orderId.equals(that.orderId)
+            && type.equals(that.type)
+            && status.equals(that.status)
+            && market.equals(that.market)
+            && amount.equals(that.amount)
+            && price.equals(that.price);
   }
 
   @Override
