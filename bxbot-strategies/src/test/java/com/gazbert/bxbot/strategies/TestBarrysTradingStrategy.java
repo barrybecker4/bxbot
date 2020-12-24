@@ -23,11 +23,15 @@
 
 package com.gazbert.bxbot.strategies;
 
+import static com.gazbert.bxbot.domain.transaction.TransactionEntry.Status.FILLED;
+import static com.gazbert.bxbot.domain.transaction.TransactionEntry.Status.SENT;
 import static org.easymock.EasyMock.createMock;
 import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 
+import com.gazbert.bxbot.domain.transaction.TransactionEntry;
+import com.gazbert.bxbot.repository.TransactionsRepository;
 import com.gazbert.bxbot.strategy.api.StrategyConfig;
 import com.gazbert.bxbot.strategy.api.StrategyException;
 import com.gazbert.bxbot.trading.api.ExchangeNetworkException;
@@ -57,6 +61,7 @@ import org.powermock.reflect.Whitebox;
 public class TestBarrysTradingStrategy {
 
   private static final String MARKET_ID = "btc_usd";
+  private static final String MARKET_NAME = "BTC_USD";
   private static final String BASE_CURRENCY = "BTC";
   private static final String COUNTER_CURRENCY = "USD";
 
@@ -65,11 +70,12 @@ public class TestBarrysTradingStrategy {
   private static final String ORDER_ID = "45345346";
 
   private TradingContext context;
-  //private TradingApi tradingApi;
-  //private Market market;
+  private TradingApi tradingApi;
+  private Market market;
   private StrategyConfig config;
+  private TransactionsRepository transactionRepo;
 
-  //private MarketOrderBook marketOrderBook;
+  private MarketOrderBook marketOrderBook;
   private MarketOrder marketBuyOrder;
   private MarketOrder marketSellOrder;
 
@@ -80,12 +86,13 @@ public class TestBarrysTradingStrategy {
   @Before
   public void setUpBeforeEachTest() throws Exception {
     context = createMock(TradingContext.class);
-    //tradingApi = createMock(TradingApi.class);
-    //market = createMock(Market.class);
+    tradingApi = createMock(TradingApi.class);
+    market = createMock(Market.class);
     config = createMock(StrategyConfig.class);
+    transactionRepo = createMock(TransactionsRepository.class);
 
     // setup market order book
-    //marketOrderBook = createMock(MarketOrderBook.class);
+    marketOrderBook = createMock(MarketOrderBook.class);
     marketBuyOrder = createMock(MarketOrder.class);
     marketBuyOrders = new ArrayList<>();
     marketBuyOrders.add(marketBuyOrder);
@@ -100,20 +107,20 @@ public class TestBarrysTradingStrategy {
         .andReturn(CONFIG_ITEM_MINIMUM_PERCENTAGE_GAIN);
 
     // expect Market name to be logged zero or more times.
-    expect(context.getMarketName()).andReturn("BTC_USD").anyTimes();
-    //expect(tradingApi.getMarketOrders(MARKET_ID)).andReturn(marketOrderBook).anyTimes();
-    //expect(market.getName()).andReturn("BTC_USD").anyTimes();
-    //expect(market.getId()).andReturn(MARKET_ID).anyTimes();
+    expect(context.getMarketName()).andReturn(MARKET_NAME).anyTimes();
+    expect(tradingApi.getMarketOrders(MARKET_ID)).andReturn(marketOrderBook).anyTimes();
+    expect(market.getName()).andReturn(MARKET_NAME).anyTimes();
+    expect(market.getId()).andReturn(MARKET_ID).anyTimes();
 
     // expect market order book to be fetched
-    //expect(marketOrderBook.getBuyOrders()).andReturn(marketBuyOrders);
-    //expect(marketOrderBook.getSellOrders()).andReturn(marketSellOrders);
+    expect(marketOrderBook.getBuyOrders()).andReturn(marketBuyOrders);
+    expect(marketOrderBook.getSellOrders()).andReturn(marketSellOrders);
     expect(context.getBuyOrders()).andReturn(marketBuyOrders);
     expect(context.getSellOrders()).andReturn(marketSellOrders);
   }
 
   /*
-   * Tests scenario when bot has just started and the strategy is invoked for the first time.
+   * Tests scenario when bot has just started, and the strategy is invoked for the first time.
    *
    * - Given the bot has just started
    * - When the strategy is first invoked
@@ -123,30 +130,35 @@ public class TestBarrysTradingStrategy {
   public void testStrategySendsInitialBuyOrderWhenItIsFirstCalled() throws Exception {
     // expect to get current bid and ask spot prices
     final BigDecimal bidSpotPrice = new BigDecimal("1453.014");
-    //expect(marketBuyOrders.get(0).getPrice()).andReturn(bidSpotPrice);
+    expect(marketBuyOrders.get(0).getPrice()).andReturn(bidSpotPrice);
     final BigDecimal askSpotPrice = new BigDecimal("1455.016");
-    //expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
+    expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
 
     // expect to get amount of base currency to buy for given counter currency amount
-    final BigDecimal lastTradePrice = new BigDecimal("1454.018");
+    final BigDecimal lastTradePrice = new BigDecimal("1453.014"); //("1454.018");
 
     final BigDecimal amountOfUnitsToBuy = new BigDecimal("0.01375499");
-    //expect(context.getAmountOfBaseCurrencyToBuyGivenCounterCurrency(
-    //        new BigDecimal(CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT)))
-    //        .andReturn(amountOfUnitsToBuy);
+    expect(context.getAmountOfBaseCurrencyToBuy(
+            new BigDecimal(CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT)))
+            .andReturn(amountOfUnitsToBuy);
 
-    // expect to send initial buy order to exchange
-    final String orderId = "4239407233";
+    OrderState expBuyOrder =
+            new OrderState(ORDER_ID, OrderType.BUY, bidSpotPrice, amountOfUnitsToBuy);
 
-    //expect(context.sendBuyOrder(amountOfUnitsToBuy, lastTradePrice)).andReturn(new OrderState());
+    expect(context.sendBuyOrder(amountOfUnitsToBuy, lastTradePrice)).andReturn(expBuyOrder);
 
-    replay(context, config, marketBuyOrder, marketSellOrder);
+    TransactionEntry expEntry = new TransactionEntry(ORDER_ID, OrderType.BUY.getStringValue(), SENT,
+            MARKET_NAME, amountOfUnitsToBuy, bidSpotPrice);
+
+    expect(transactionRepo.save(expEntry)).andReturn(expEntry);
+
+    replay(context, config, transactionRepo, marketBuyOrder, marketSellOrder);
 
     final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
-    strategy.init(context, config);
+    strategy.init(context, config, transactionRepo);
     strategy.execute();
 
-    verify(context, config, marketBuyOrder, marketSellOrder);
+    verify(context, config, transactionRepo, marketBuyOrder, marketSellOrder);
   }
 
   /*
@@ -159,16 +171,24 @@ public class TestBarrysTradingStrategy {
    */
   @Test
   public void testStrategySendsNewSellOrderToExchangeWhenCurrentBuyOrderFilled() throws Exception {
+
+    expect(context.isOrderOpen(ORDER_ID)).andReturn(false);
+
     // expect to get current bid and ask spot prices
     final BigDecimal bidSpotPrice = new BigDecimal("1453.014");
-    //expect(marketBuyOrders.get(0).getPrice()).andReturn(bidSpotPrice);
+    expect(marketBuyOrders.get(0).getPrice()).andReturn(bidSpotPrice);
     final BigDecimal askSpotPrice = new BigDecimal("1455.016");
-    //expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
+    expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
 
-    // mock an existing buy order state
+    // mock the buy order state that was filled
     final BigDecimal lastOrderAmount = new BigDecimal("35");
     final BigDecimal lastOrderPrice = new BigDecimal("1454.018");
     final Object orderState = createMockOrder(OrderType.BUY, lastOrderPrice, lastOrderAmount);
+
+    TransactionEntry buyEntry = new TransactionEntry(
+            ORDER_ID, OrderType.BUY.getStringValue(), FILLED,
+            MARKET_NAME, lastOrderAmount, lastOrderPrice);
+    expect(transactionRepo.save(buyEntry)).andReturn(buyEntry);
 
     // expect to send new sell order to exchange
     final BigDecimal requiredProfitInPercent = new BigDecimal("0.02");
@@ -179,21 +199,26 @@ public class TestBarrysTradingStrategy {
             .setScale(8, RoundingMode.HALF_UP);
     final String orderId = "4239407234";
 
-    //expect(context.sendSellOrder(lastOrderAmount, newAskPrice)).andReturn(new OrderState());
+    OrderState expSellOrder =
+            new OrderState(ORDER_ID, OrderType.SELL, newAskPrice, lastOrderAmount);
+    expect(context.sendSellOrder(lastOrderAmount, newAskPrice)).andReturn(expSellOrder);
 
-    replay(
-        context, config, marketBuyOrder, marketSellOrder, orderState);
+    TransactionEntry sellEntry = new TransactionEntry(
+            ORDER_ID, OrderType.SELL.getStringValue(), SENT,
+            MARKET_NAME, lastOrderAmount, newAskPrice);
+    expect(transactionRepo.save(sellEntry)).andReturn(sellEntry);
+
+    replay(context, config, transactionRepo, marketBuyOrder, marketSellOrder, orderState);
 
     final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
 
     // inject the existing buy order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
 
-    strategy.init(context, config);
+    strategy.init(context, config, transactionRepo);
     strategy.execute();
 
-    verify(
-        context, config, marketBuyOrder, marketSellOrder, orderState);
+    verify(context, config, transactionRepo, marketBuyOrder, marketSellOrder, orderState);
   }
 
   /*
@@ -206,11 +231,14 @@ public class TestBarrysTradingStrategy {
    */
   @Test
   public void testStrategyHoldsWhenCurrentBuyOrderIsNotFilled() throws Exception {
+
+    expect(context.isOrderOpen(ORDER_ID)).andReturn(true);
+
     // expect to get current bid and ask spot prices
     final BigDecimal bidSpotPrice = new BigDecimal("1453.014");
-    //expect(marketBuyOrders.get(0).getPrice()).andReturn(bidSpotPrice);
+    expect(marketBuyOrders.get(0).getPrice()).andReturn(bidSpotPrice);
     final BigDecimal askSpotPrice = new BigDecimal("1455.016");
-    //expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
+    expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
 
     // mock an existing buy order state
     final BigDecimal lastOrderAmount = new BigDecimal("35");
@@ -222,9 +250,6 @@ public class TestBarrysTradingStrategy {
     final List<OpenOrder> openOrders = new ArrayList<>();
     openOrders.add(unfilledOrder); // still have open order
 
-    // expect strategy to find existing open order and hold current position
-    //expect(openOrders.get(0).getId()).andReturn(ORDER_ID);
-
     replay(context, config, marketBuyOrder, marketSellOrder,
         orderState, unfilledOrder);
 
@@ -233,7 +258,7 @@ public class TestBarrysTradingStrategy {
     // inject the existing buy order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
 
-    strategy.init(context, config);
+    strategy.init(context, config, transactionRepo);
     strategy.execute();
 
     verify(context, config, marketBuyOrder, marketSellOrder,
@@ -250,62 +275,76 @@ public class TestBarrysTradingStrategy {
    */
   @Test
   public void testStrategySendsNewBuyOrderToExchangeWhenCurrentSellOrderFilled() throws Exception {
-    // expect to get current bid and ask spot prices
-    final BigDecimal bidSpotPrice = new BigDecimal("1453.014");
-    //expect(marketBuyOrders.get(0).getPrice()).andReturn(bidSpotPrice);
-    final BigDecimal askSpotPrice = new BigDecimal("1455.016");
-    //expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
+
+    expect(context.isOrderOpen(ORDER_ID)).andReturn(false);
 
     // mock an existing sell order state
     final BigDecimal lastOrderAmount = new BigDecimal("35");
     final BigDecimal lastOrderPrice = new BigDecimal("1454.018");
-    final Object orderState = createMockOrder(OrderType.SELL, lastOrderPrice, lastOrderAmount);
+    final Object sellOrderState = createMockOrder(OrderType.SELL, lastOrderPrice, lastOrderAmount);
+
+    final TransactionEntry sellEntry =
+            new TransactionEntry(ORDER_ID, OrderType.SELL.getStringValue(), FILLED,
+                    MARKET_NAME, lastOrderAmount, lastOrderPrice);
+    expect(transactionRepo.save(sellEntry)).andReturn(sellEntry);
+
+    // expect to get current bid and ask spot prices
+    final BigDecimal bidSpotPrice = new BigDecimal("1453.014");
+    expect(marketBuyOrders.get(0).getPrice()).andReturn(bidSpotPrice);
+    final BigDecimal askSpotPrice = new BigDecimal("1455.016");
+    expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
+
+    final BigDecimal amountOfUnitsToBuy = new BigDecimal("1333.33333333");
+    expect(context.getAmountOfBaseCurrencyToBuy(
+            new BigDecimal(CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT)))
+            .andReturn(amountOfUnitsToBuy);
+
+    final TransactionEntry buyEntry =
+            new TransactionEntry(ORDER_ID, OrderType.BUY.getStringValue(), SENT,
+                    MARKET_NAME, amountOfUnitsToBuy, bidSpotPrice);
+    expect(transactionRepo.save(buyEntry)).andReturn(buyEntry);
 
     // expect to send new buy order to exchange
-    final BigDecimal amountOfUnitsToBuy = new BigDecimal("1333.33333333");
-
     OrderState expOrder =
-            new OrderState("4239407233", OrderType.BUY, bidSpotPrice, amountOfUnitsToBuy);
-    //expect(context.sendBuyOrder(amountOfUnitsToBuy, bidSpotPrice)).andReturn(expOrder);
+            new OrderState(ORDER_ID, OrderType.BUY, bidSpotPrice, amountOfUnitsToBuy);
+    expect(context.sendBuyOrder(amountOfUnitsToBuy, bidSpotPrice)).andReturn(expOrder);
 
-    replay(
-        context, config, marketBuyOrder, marketSellOrder, orderState);
+    replay(context, config, transactionRepo, marketBuyOrder, marketSellOrder, sellOrderState);
 
     final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
 
     // inject the existing sell order
-    Whitebox.setInternalState(strategy, "lastOrder", orderState);
+    Whitebox.setInternalState(strategy, "lastOrder", sellOrderState);
 
-    strategy.init(context, config);
+    strategy.init(context, config, transactionRepo);
     strategy.execute();
 
-    verify(
-        context, config, marketBuyOrder, marketSellOrder, orderState);
+    verify(context, config, transactionRepo, marketBuyOrder, marketSellOrder, sellOrderState);
   }
 
   /*
    * Tests scenario when strategy's current sell order is still waiting to be filled. We expect
    * it to hold.
    *
-   * - Given the bot has placed a sell order and it had not filled
-   * - When the strategy is invoked<
-   * - Then the bot holds until the next trade cycle<
+   * - Given the bot has placed a sell order and it has not filled
+   * - When the strategy is invoked,
+   * - Then the bot holds until the next trade cycle
    */
   @Test
   public void testStrategyHoldsWhenCurrentSellOrderIsNotFilled() throws Exception {
     // expect to get current bid and ask spot prices
-    //    final BigDecimal bidSpotPrice = new BigDecimal("1453.014");
-    //    expect(marketBuyOrders.get(0).getPrice()).andReturn(bidSpotPrice);
-    //    final BigDecimal askSpotPrice = new BigDecimal("1455.016");
-    //    expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
+    final BigDecimal bidSpotPrice = new BigDecimal("1453.014");
+    expect(marketBuyOrders.get(0).getPrice()).andReturn(bidSpotPrice);
+    final BigDecimal askSpotPrice = new BigDecimal("1455.016");
+    expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
+
+    expect(context.isOrderOpen("4239407233")).andReturn(true);
 
     // mock an existing sell order state
     final BigDecimal lastOrderAmount = new BigDecimal("35");
     final BigDecimal lastOrderPrice = new BigDecimal("1454.018");
-
     OrderState expOrderState =
             new OrderState("4239407233", OrderType.SELL, lastOrderPrice, lastOrderAmount);
-    //expect(context.sendSellOrder(lastOrderAmount, lastOrderPrice)).andReturn(expOrderState);
 
     replay(context, config, marketBuyOrder, marketSellOrder);
 
@@ -314,7 +353,7 @@ public class TestBarrysTradingStrategy {
     // inject the existing sell order
     Whitebox.setInternalState(strategy, "lastOrder", expOrderState);
 
-    strategy.init(context, config);
+    strategy.init(context, config, transactionRepo);
     strategy.execute();
 
     verify(context, config, marketBuyOrder, marketSellOrder);
@@ -336,24 +375,26 @@ public class TestBarrysTradingStrategy {
   public void testStrategyHandlesTimeoutExceptionWhenPlacingInitialBuyOrder() throws Exception {
     // expect to get current bid and ask spot prices
     final BigDecimal bidSpotPrice = new BigDecimal("1453.014");
-    //expect(marketBuyOrders.get(0).getPrice()).andReturn(bidSpotPrice);
+    expect(marketBuyOrders.get(0).getPrice()).andReturn(bidSpotPrice);
     final BigDecimal askSpotPrice = new BigDecimal("1455.016");
-    //expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
+    expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
 
     // expect to send initial buy order to exchange and receive timeout exception
     final BigDecimal amountOfUnitsToBuy = new BigDecimal("0.01375499");
-    //    expect(market.getId()).andReturn(MARKET_ID);
-    //    expect(market.getCounterCurrency()).andReturn(COUNTER_CURRENCY).anyTimes();
-    //    expect(market.getBaseCurrency()).andReturn(BASE_CURRENCY).anyTimes();
-    //    expect(tradingApi.createOrder(MARKET_ID, OrderType.BUY, amountOfUnitsToBuy, bidSpotPrice))
+    expect(context.getAmountOfBaseCurrencyToBuy(
+            new BigDecimal(CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT)))
+            .andReturn(amountOfUnitsToBuy);
 
-    //expect(context.sendBuyOrder(amountOfUnitsToBuy, bidSpotPrice))
-    //        .andThrow(new ExchangeNetworkException("Timeout waiting for exchange!"));
+    expect(market.getId()).andReturn(MARKET_ID);
+    expect(tradingApi.createOrder(MARKET_ID, OrderType.BUY, amountOfUnitsToBuy, bidSpotPrice));
+
+    expect(context.sendBuyOrder(amountOfUnitsToBuy, bidSpotPrice))
+            .andThrow(new ExchangeNetworkException("Timeout waiting for exchange!"));
 
     replay(context, config, marketBuyOrder, marketSellOrder);
 
     final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
-    strategy.init(context, config);
+    strategy.init(context, config, transactionRepo);
     strategy.execute();
 
     verify(context, config, marketBuyOrder, marketSellOrder);
@@ -369,11 +410,14 @@ public class TestBarrysTradingStrategy {
    */
   @Test
   public void testStrategyHandlesTimeoutExceptionWhenPlacingBuyOrder() throws Exception {
+
+    expect(context.isOrderOpen(ORDER_ID)).andReturn(false);
+
     // expect to get current bid and ask spot prices
     final BigDecimal bidSpotPrice = new BigDecimal("1453.014");
-    //expect(marketBuyOrders.get(0).getPrice()).andReturn(bidSpotPrice);
+    expect(marketBuyOrders.get(0).getPrice()).andReturn(bidSpotPrice);
     final BigDecimal askSpotPrice = new BigDecimal("1455.016");
-    //expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
+    expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
 
     // mock an existing sell order state
     final BigDecimal lastOrderAmount = new BigDecimal("35");
@@ -382,10 +426,12 @@ public class TestBarrysTradingStrategy {
 
     // expect to send new buy order to exchange and receive timeout exception
     final BigDecimal amountOfUnitsToBuy = new BigDecimal("1333.33333333");
+    expect(context.getAmountOfBaseCurrencyToBuy(
+            new BigDecimal(CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT)))
+            .andReturn(amountOfUnitsToBuy);
 
-    //TradingContext.sendBuyOrder(1333.33333333, 1453.014)
-    //expect(context.sendBuyOrder(amountOfUnitsToBuy, bidSpotPrice))
-    //       .andThrow(new ExchangeNetworkException("Timeout waiting for exchange!"));
+    expect(context.sendBuyOrder(amountOfUnitsToBuy, bidSpotPrice))
+           .andThrow(new ExchangeNetworkException("Timeout waiting for exchange!"));
 
     replay(context, config, marketBuyOrder, marketSellOrder, orderState);
 
@@ -394,7 +440,7 @@ public class TestBarrysTradingStrategy {
     // inject the existing sell order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
 
-    strategy.init(context, config);
+    strategy.init(context, config, transactionRepo);
     strategy.execute();
 
     verify(context, config, marketBuyOrder, marketSellOrder, orderState);
@@ -410,11 +456,14 @@ public class TestBarrysTradingStrategy {
    */
   @Test
   public void testStrategyHandlesTimeoutExceptionWhenPlacingSellOrder() throws Exception {
+
+    expect(context.isOrderOpen(ORDER_ID)).andReturn(false);
+
     // expect to get current bid and ask spot prices
     final BigDecimal bidSpotPrice = new BigDecimal("1453.014");
-    //expect(marketBuyOrders.get(0).getPrice()).andReturn(bidSpotPrice);
+    expect(marketBuyOrders.get(0).getPrice()).andReturn(bidSpotPrice);
     final BigDecimal askSpotPrice = new BigDecimal("1455.016");
-    //expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
+    expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
 
     // mock an existing buy order state
     final BigDecimal lastOrderAmount = new BigDecimal("35");
@@ -429,8 +478,8 @@ public class TestBarrysTradingStrategy {
             .add(lastOrderPrice)
             .setScale(8, RoundingMode.HALF_UP);
 
-    //expect(context.sendSellOrder(lastOrderAmount, newAskPrice))
-    //        .andThrow(new ExchangeNetworkException("Timeout waiting for exchange!"));
+    expect(context.sendSellOrder(lastOrderAmount, newAskPrice))
+            .andThrow(new ExchangeNetworkException("Timeout waiting for exchange!"));
 
     replay(context, config, marketBuyOrder, marketSellOrder, orderState);
 
@@ -439,7 +488,7 @@ public class TestBarrysTradingStrategy {
     // inject the existing buy order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
 
-    strategy.init(context, config);
+    strategy.init(context, config, transactionRepo);
     strategy.execute();
 
     verify(context, config, marketBuyOrder, marketSellOrder, orderState);
@@ -458,24 +507,27 @@ public class TestBarrysTradingStrategy {
    * - When a Trading API exception is caught
    * - Then the strategy throws a Strategy exception
    */
-  @Test
+  @Test(expected = StrategyException.class)
   public void testStrategyHandlesTradingApiExceptionWhenPlacingInitialBuyOrder() throws Exception {
-    //@Test(expected = StrategyException.class)
+
     // expect to get current bid and ask spot prices
     final BigDecimal bidSpotPrice = new BigDecimal("1453.014");
-    //expect(marketBuyOrders.get(0).getPrice()).andReturn(bidSpotPrice);
+    expect(marketBuyOrders.get(0).getPrice()).andReturn(bidSpotPrice);
     final BigDecimal askSpotPrice = new BigDecimal("1455.016");
-    //expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
+    expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
 
     final BigDecimal amountOfUnitsToBuy = new BigDecimal("0.01375499");
+    expect(context.getAmountOfBaseCurrencyToBuy(
+            new BigDecimal(CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT)))
+            .andReturn(amountOfUnitsToBuy);
 
-    //expect(context.sendBuyOrder(amountOfUnitsToBuy, bidSpotPrice))
-    //        .andThrow(new TradingApiException("Exchange returned a 500 status code!"));
+    expect(context.sendBuyOrder(amountOfUnitsToBuy, bidSpotPrice))
+            .andThrow(new TradingApiException("Exchange returned a 500 status code!"));
 
     replay(context, config, marketBuyOrder, marketSellOrder);
 
     final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
-    strategy.init(context, config);
+    strategy.init(context, config, transactionRepo);
     strategy.execute();
 
     verify(context, config, marketBuyOrder, marketSellOrder);
@@ -489,14 +541,16 @@ public class TestBarrysTradingStrategy {
    * - When a Trading API exception is caught
    * - Then the strategy throws a Strategy exception
    */
-  @Test
+  @Test(expected = StrategyException.class)
   public void testStrategyHandlesTradingApiExceptionWhenPlacingBuyOrder() throws Exception {
-    //@Test(expected = StrategyException.class)
+
+    expect(context.isOrderOpen(ORDER_ID)).andReturn(false);
+
     // expect to get current bid and ask spot prices
     final BigDecimal bidSpotPrice = new BigDecimal("1453.014");
-    //expect(marketBuyOrders.get(0).getPrice()).andReturn(bidSpotPrice);
+    expect(marketBuyOrders.get(0).getPrice()).andReturn(bidSpotPrice);
     final BigDecimal askSpotPrice = new BigDecimal("1455.016");
-    //expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
+    expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
 
     // mock an existing sell order state
     final BigDecimal lastOrderAmount = new BigDecimal("35");
@@ -505,9 +559,12 @@ public class TestBarrysTradingStrategy {
 
     // expect to send new buy order to exchange and receive timeout exception
     final BigDecimal amountOfUnitsToBuy = new BigDecimal("1333.33333333");
+    expect(context.getAmountOfBaseCurrencyToBuy(
+            new BigDecimal(CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT)))
+            .andReturn(amountOfUnitsToBuy);
 
-    //expect(context.sendBuyOrder(amountOfUnitsToBuy, bidSpotPrice))
-    //        .andThrow(new TradingApiException("Exchange returned a 500 status code!"));
+    expect(context.sendBuyOrder(amountOfUnitsToBuy, bidSpotPrice))
+            .andThrow(new TradingApiException("Exchange returned a 500 status code!"));
 
     replay(context, config, marketBuyOrder, marketSellOrder, orderState);
 
@@ -516,7 +573,7 @@ public class TestBarrysTradingStrategy {
     // inject the existing sell order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
 
-    strategy.init(context, config);
+    strategy.init(context, config, transactionRepo);
     strategy.execute();
 
     verify(context, config, marketBuyOrder, marketSellOrder, orderState);
@@ -530,29 +587,36 @@ public class TestBarrysTradingStrategy {
    * - When a Trading API exception is caught
    * - Then the strategy throws a Strategy exception
    */
-  @Test
+  @Test(expected = StrategyException.class)
   public void testStrategyHandlesTradingApiExceptionWhenPlacingSellOrder() throws Exception {
-    //@Test(expected = StrategyException.class)
+
+    expect(context.isOrderOpen(ORDER_ID)).andReturn(false);
+
     // expect to get current bid and ask spot prices
     final BigDecimal bidSpotPrice = new BigDecimal("1453.014");
-    //expect(marketBuyOrders.get(0).getPrice()).andReturn(bidSpotPrice);
+    expect(marketBuyOrders.get(0).getPrice()).andReturn(bidSpotPrice);
     final BigDecimal askSpotPrice = new BigDecimal("1455.016");
-    //expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
+    expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
 
     final BigDecimal lastOrderAmount = new BigDecimal("35");
     final BigDecimal lastOrderPrice = new BigDecimal("1454.018");
-    final Object orderState = createMockOrder(OrderType.BUY, lastOrderPrice, lastOrderAmount);
+    final Object orderState = createMockOrder(OrderType.SELL, lastOrderPrice, lastOrderAmount);
+
+    final TransactionEntry sellEntry =
+            new TransactionEntry(ORDER_ID, OrderType.SELL.getStringValue(), FILLED,
+                    MARKET_NAME, lastOrderAmount, bidSpotPrice);
+    expect(transactionRepo.save(sellEntry)).andReturn(sellEntry);
 
     // expect to send new sell order to exchange and receive timeout exception
     final BigDecimal requiredProfitInPercent = new BigDecimal("0.02");
-    final BigDecimal newAskPrice =
-        lastOrderPrice
-            .multiply(requiredProfitInPercent)
-            .add(lastOrderPrice)
-            .setScale(8, RoundingMode.HALF_UP);
 
-    //expect(context.sendBuyOrder(lastOrderAmount, newAskPrice))
-    //        .andThrow(new TradingApiException("Exchange returned a 500 status code!"));
+    final BigDecimal amountOfUnitsToBuy = new BigDecimal("0.01375499");
+    expect(context.getAmountOfBaseCurrencyToBuy(
+            new BigDecimal(CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT)))
+            .andReturn(amountOfUnitsToBuy);
+
+    expect(context.sendBuyOrder(amountOfUnitsToBuy, bidSpotPrice))
+            .andThrow(new TradingApiException("Exchange returned a 500 status code!"));
 
     replay(context, config, marketBuyOrder, marketSellOrder, orderState);
 
@@ -561,7 +625,7 @@ public class TestBarrysTradingStrategy {
     // inject the existing buy order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
 
-    strategy.init(context, config);
+    strategy.init(context, config, transactionRepo);
     strategy.execute();
 
     verify(context, config, marketBuyOrder, marketSellOrder, orderState);

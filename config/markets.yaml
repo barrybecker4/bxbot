@@ -31,11 +31,11 @@ markets:
     # Currently, BX-bot only supports 1 strategy per market.
     tradingStrategyId: barrys-strategy
 
-  - id: ltcusd
-    name: LTC/BTC
-    baseCurrency: LTC
-    counterCurrency: BTC
-    enabled: false
-    tradingStrategyId: barrys-strategy
+  #- id: ltcusd
+  #  name: LTC/BTC
+  #  baseCurrency: LTC
+  #  counterCurrency: BTC
+  #  enabled: false
+  #  tradingStrategyId: barrys-strategy
 
 

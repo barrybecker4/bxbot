@@ -28,6 +28,7 @@ import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Objects;
 import java.util.TimeZone;
 import javax.persistence.Basic;
 import javax.persistence.Entity;
@@ -165,5 +166,23 @@ public class TransactionEntry {
       .add("total", amount * price)
       .add("timestamp", format.format(timestamp))
       .toString();
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    TransactionEntry that = (TransactionEntry) o;
+    return orderId.equals(that.orderId) &&
+            type.equals(that.type) &&
+            status.equals(that.status) &&
+            market.equals(that.market) &&
+            amount.equals(that.amount) &&
+            price.equals(that.price);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(orderId, type, status, market, amount, price);
   }
 }

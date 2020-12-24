@@ -52,17 +52,18 @@ public class BarrysTradingStrategy implements TradingStrategy {
    */
   @Override
   public void init(TradingApi tradingApi, Market market, StrategyConfig config) {
-    init(new TradingContext(tradingApi, market), config);
+    init(new TradingContext(tradingApi, market), config, transactionRepo);
   }
 
   /**
    * Used by tests.
    */
-  public void init(TradingContext context, StrategyConfig config) {
+  public void init(TradingContext context, StrategyConfig config, TransactionsRepository transactionRepo) {
     this.context = context;
     strategyConfig = new BarrysTradingStrategyConfig(config);
+    this.transactionRepo = transactionRepo;
     LOG.info(() -> "Barry's Trading Strategy was initialised successfully!");
-    TempDbDemo.demoDb(transactionRepo);
+    //TempDbDemo.demoDb(transactionRepo);
   }
 
   /**
@@ -92,6 +93,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
     final List<MarketOrder> buyOrders = context.getBuyOrders();
     final List<MarketOrder> sellOrders = context.getSellOrders();
 
+    //LOG.info(() -> "Buy orders=" + buyOrders + " Sell orders = " + sellOrders);
     if (!hasOrders("Buy", buyOrders) || !hasOrders("Sell", sellOrders)) {
       LOG.info(() -> "No buy or sell orders (maybe market is closed)");
       return;
@@ -139,7 +141,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
     if (orders.isEmpty()) {
       LOG.warn(() -> "Exchange returned no " + type + " Orders. Ignoring this trade window.");
     }
-    return orders.isEmpty();
+    return !orders.isEmpty();
   }
 
   private void logPrices(BigDecimal bidPrice, BigDecimal askPrice) {
