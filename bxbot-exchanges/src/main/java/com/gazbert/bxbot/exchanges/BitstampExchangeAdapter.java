@@ -23,6 +23,8 @@
 
 package com.gazbert.bxbot.exchanges;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.gazbert.bxbot.exchange.api.AuthenticationConfig;
 import com.gazbert.bxbot.exchange.api.ExchangeAdapter;
 import com.gazbert.bxbot.exchange.api.ExchangeConfig;
@@ -48,6 +50,7 @@ import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParseException;
 import com.google.gson.annotations.SerializedName;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
@@ -56,7 +59,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
@@ -69,8 +72,12 @@ import java.util.List;
 import java.util.Map;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+
+
 
 /**
  * Exchange Adapter for integrating with the Bitstamp exchange. It uses v2 of the Bitstamp API; it
@@ -100,6 +107,16 @@ import org.apache.logging.log4j.Logger;
  * orders. This adapter truncates any prices with more than 2 decimal places and rounds using {@link
  * java.math.RoundingMode#HALF_EVEN}, E.g. 250.176 would be sent to the exchange as 250.18.
  *
+ * <pre>
+ * Some notes about trading on BitStamp as of 1/2021:
+ *  - Minimum trade is 25$ (or about 0.002 BTC @ $25,000/BTC)
+ *  - The BTC amount has 8 decimal points of precision. USD values are rounded to 5 decimals.
+ *  - the Fee is 0.5%
+ *  - I made a market order to buy 0.00102011 BTC @ 24555.00 USD for a value of $25.05
+ *  - See https://www.bitstamp.net/article/upcoming-changes-fee-schedule/
+ *  - My starting balance on 12/25/2020 is $1005. 896.35 in USD and 0.00451180 BTC ($112.795)
+ *  </pre>
+ *
  * @author gazbert
  * @since 1.0
  */
@@ -107,7 +124,10 @@ public class BitstampExchangeAdapter extends AbstractExchangeAdapter implements 
 
   private static final Logger LOG = LogManager.getLogger();
 
-  private static final String API_BASE_URL = "https://www.bitstamp.net/api/v2/";
+  private static final String URL_HOST = "www.bitstamp.net";
+  private static final String VERSION = "v2";
+  private static final String API_PATH = "/api/" + VERSION + "/";
+  private static final String API_BASE_URL = "https://" + URL_HOST + API_PATH;
 
   private static final String UNEXPECTED_ERROR_MSG =
       "Unexpected error has occurred in Bitstamp Exchange Adapter. ";
@@ -761,6 +781,9 @@ public class BitstampExchangeAdapter extends AbstractExchangeAdapter implements 
     }
   }
 
+  /**
+   * Adapted based on new instructions at https://www.bitstamp.net/api/
+   */
   private ExchangeHttpResponse sendAuthenticatedRequestToExchange(
       String apiMethod, Map<String, String> params)
       throws ExchangeNetworkException, TradingApiException {
@@ -777,15 +800,16 @@ public class BitstampExchangeAdapter extends AbstractExchangeAdapter implements 
         params = createRequestParamMap();
       }
 
-      params.put("key", key);
-      params.put("nonce", Long.toString(nonce));
+      // old way is to set key, nonce, and signature in params
+      //params.put("key", key);
+      //params.put("nonce", Long.toString(nonce));
 
       // Create MAC message for signature
       // message = nonce + client_id + api_key
       mac.reset(); // force reset
-      mac.update(String.valueOf(nonce).getBytes(StandardCharsets.UTF_8));
-      mac.update(clientId.getBytes(StandardCharsets.UTF_8));
-      mac.update(key.getBytes(StandardCharsets.UTF_8));
+      mac.update(String.valueOf(nonce).getBytes(UTF_8));
+      mac.update(clientId.getBytes(UTF_8));
+      mac.update(key.getBytes(UTF_8));
 
       /*
        * Signature is a HMAC-SHA256 encoded message containing: nonce, client ID and API key.
@@ -795,8 +819,42 @@ public class BitstampExchangeAdapter extends AbstractExchangeAdapter implements 
        *
        * signature = hmac.new(API_SECRET, msg=message, digestmod=hashlib.sha256).hexdigest().upper()
        */
-      final String signature = toHex(mac.doFinal()).toUpperCase();
-      params.put("signature", signature);
+      //final String signature = toHex(mac.doFinal()).toUpperCase();
+      //params.put("signature", signature);
+
+      //------
+
+      String apiKey = String.format("%s %s", "BITSTAMP", key);
+      String apiKeySecret = secret;
+      String httpVerb = "POST";
+      String urlPath = API_PATH + apiMethod + "/";
+      String urlQuery = "";
+      String timestamp = String.valueOf(System.currentTimeMillis());
+      String contentType = "application/x-www-form-urlencoded";
+      String payloadString = "offset=1";
+      String signature = apiKey
+              + httpVerb
+              + URL_HOST
+              + urlPath
+              + urlQuery
+              + contentType
+              + nonce
+              + timestamp
+              + VERSION
+              + payloadString;
+
+      try {
+        SecretKeySpec secretKey =
+                new SecretKeySpec(apiKeySecret.getBytes(UTF_8), "HmacSHA256");
+        Mac mac = Mac.getInstance("HmacSHA256");
+        mac.init(secretKey);
+        byte[] rawHmac = mac.doFinal(signature.getBytes(UTF_8));
+        signature = new String(Hex.encodeHex(rawHmac)).toUpperCase();
+
+      } catch (Exception e) {
+        throw new RuntimeException(e);
+      }
+      //------
 
       // increment ready for next call...
       nonce++;
@@ -809,12 +867,17 @@ public class BitstampExchangeAdapter extends AbstractExchangeAdapter implements 
         }
         postData.append(param.getKey());
         postData.append("=");
-        postData.append(URLEncoder.encode(param.getValue(), StandardCharsets.UTF_8));
+        postData.append(URLEncoder.encode(param.getValue(), UTF_8));
       }
 
       // Request headers required by Exchange
       final Map<String, String> requestHeaders = createHeaderParamMap();
       requestHeaders.put("Content-Type", "application/x-www-form-urlencoded");
+      requestHeaders.put("X-Auth", apiKey);
+      requestHeaders.put("X-Auth-Signature", signature);
+      requestHeaders.put("X-Auth-Nonce", Long.toString(nonce));
+      requestHeaders.put("X-Auth-Timestamp", timestamp);
+      requestHeaders.put("X-Auth-Version", VERSION);
 
       // MUST have the trailing slash else exchange barfs...
       final URL url = new URL(API_BASE_URL + apiMethod + "/");
@@ -844,7 +907,7 @@ public class BitstampExchangeAdapter extends AbstractExchangeAdapter implements 
   private void initSecureMessageLayer() {
     try {
       final SecretKeySpec keyspec =
-          new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+          new SecretKeySpec(secret.getBytes(UTF_8), "HmacSHA256");
       mac = Mac.getInstance("HmacSHA256");
       mac.init(keyspec);
       initializedMacAuthentication = true;

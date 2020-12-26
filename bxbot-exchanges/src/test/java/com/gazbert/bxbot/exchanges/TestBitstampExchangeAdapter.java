@@ -1123,13 +1123,8 @@ public class TestBitstampExchangeAdapter extends AbstractExchangeAdapter {
                     .format(SELL_ORDER_QUANTITY)))
         .andStubReturn(null);
     expect(requestParamMap.put("type", "sell")).andStubReturn(null);
-    expect(requestParamMap.put("key", "key123")).andStubReturn(null);
-    expect(requestParamMap.put(eq("nonce"), anyString())).andStubReturn(null);
-    expect(requestParamMap.put(eq("signature"), anyString())).andStubReturn(null);
 
-    final Map<String, String> requestHeaderMap = PowerMock.createPartialMock(HashMap.class, "put");
-    expect(requestHeaderMap.put("Content-Type", "application/x-www-form-urlencoded"))
-        .andStubReturn(null);
+    final Map<String, String> requestHeaderMap = createRequestHeaderMapExp();
     PowerMock.replay(requestHeaderMap); // map needs to be in play early
 
     final BitstampExchangeAdapter exchangeAdapter =
@@ -1181,13 +1176,9 @@ public class TestBitstampExchangeAdapter extends AbstractExchangeAdapter {
                     .format(SELL_ORDER_QUANTITY)))
         .andStubReturn(null);
     expect(requestParamMap.put("type", "sell")).andStubReturn(null);
-    expect(requestParamMap.put("key", "key123")).andStubReturn(null);
-    expect(requestParamMap.put(eq("nonce"), anyString())).andStubReturn(null);
-    expect(requestParamMap.put(eq("signature"), anyString())).andStubReturn(null);
 
-    final Map<String, String> requestHeaderMap = PowerMock.createPartialMock(HashMap.class, "put");
-    expect(requestHeaderMap.put("Content-Type", "application/x-www-form-urlencoded"))
-        .andStubReturn(null);
+    final Map<String, String> requestHeaderMap = createRequestHeaderMapExp();
+
     PowerMock.replay(requestHeaderMap); // map needs to be in play early
 
     final BitstampExchangeAdapter exchangeAdapter =
@@ -1236,13 +1227,8 @@ public class TestBitstampExchangeAdapter extends AbstractExchangeAdapter {
                     .format(SELL_ORDER_QUANTITY)))
         .andStubReturn(null);
     expect(requestParamMap.put("type", "sell")).andStubReturn(null);
-    expect(requestParamMap.put("key", "key123")).andStubReturn(null);
-    expect(requestParamMap.put(eq("nonce"), anyString())).andStubReturn(null);
-    expect(requestParamMap.put(eq("signature"), anyString())).andStubReturn(null);
 
-    final Map<String, String> requestHeaderMap = PowerMock.createPartialMock(HashMap.class, "put");
-    expect(requestHeaderMap.put(eq("Content-Type"), eq("application/x-www-form-urlencoded")))
-        .andStubReturn(null);
+    final Map<String, String> requestHeaderMap = createRequestHeaderMapExp();
     PowerMock.replay(requestHeaderMap); // map needs to be in play early
 
     final BitstampExchangeAdapter exchangeAdapter =
@@ -1273,5 +1259,23 @@ public class TestBitstampExchangeAdapter extends AbstractExchangeAdapter {
     exchangeAdapter.createOrder(MARKET_ID, OrderType.SELL, SELL_ORDER_QUANTITY, SELL_ORDER_PRICE);
 
     PowerMock.verifyAll();
+  }
+
+  private Map<String, String> createRequestHeaderMapExp() {
+    final Map<String, String> requestHeaderMap =
+            PowerMock.createPartialMock(HashMap.class, "put");
+    expect(requestHeaderMap.put(eq("Content-Type"), eq("application/x-www-form-urlencoded")))
+            .andStubReturn(null);
+    expect(requestHeaderMap.put("X-Auth", "BITSTAMP key123"))
+            .andStubReturn(null);
+    expect(requestHeaderMap.put(eq("X-Auth-Signature"), anyString()))
+            .andStubReturn(null);
+    expect(requestHeaderMap.put(eq("X-Auth-Nonce"), anyString()))
+            .andStubReturn(null);
+    expect(requestHeaderMap.put(eq("X-Auth-Timestamp"), anyString()))
+            .andStubReturn(null);
+    expect(requestHeaderMap.put("X-Auth-Version", "v2"))
+            .andStubReturn(null);
+    return requestHeaderMap;
   }
 }

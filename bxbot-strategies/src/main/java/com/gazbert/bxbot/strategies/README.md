@@ -10,7 +10,6 @@
  - For successive times do: ./gradlew clean build buildTarGzipDist
    
 ### Output:
-
  - Look in build/distributions/bxbox-app-1.0.1/logs/bxbot.log
  - To view record of transactions in db:
     - Look in the h2 db (see local application.properties for instructions how to view in browser)
@@ -32,9 +31,4 @@
    Then you can use any of the other REST API.
  
  ## Next Steps
- 
- - add more fields to persisted transactions
- - verify transactions persisted using fake api
- - think api
- - move some BTC to bitstamp
  - run for real
