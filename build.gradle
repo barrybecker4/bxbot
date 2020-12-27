@@ -70,7 +70,6 @@ ext.libraries = [
         jjwt                            : dependencies.create("io.jsonwebtoken:jjwt:0.9.1"),
         google_guava                    : dependencies.create("com.google.guava:guava:28.2-jre"),
         google_gson                     : dependencies.create("com.google.code.gson:gson:2.8.6"),
-        commons_codec                   : dependencies.create("commons-codec:commons-codec:1.15"),
         h2                              : dependencies.create("com.h2database:h2:1.4.199"),
         javax_mail_api                  : dependencies.create("javax.mail:javax.mail-api:" + ext.versions.javaxMailVersion),
         javax_mail_sun                  : dependencies.create("com.sun.mail:javax.mail:" + ext.versions.javaxMailVersion),

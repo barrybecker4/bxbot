@@ -71,7 +71,6 @@ import java.util.Map;
 import java.util.UUID;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
-import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -801,8 +800,6 @@ public class BitstampExchangeAdapter extends AbstractExchangeAdapter implements 
       //mac.update(clientId.getBytes(UTF_8));
       //mac.update(apiKey.getBytes(UTF_8));
 
-      //------
-
       // Build the URL with query param args in it
       final StringBuilder postData = new StringBuilder("offset=1");
       for (final Map.Entry<String, String> param : params.entrySet()) {
@@ -841,12 +838,11 @@ public class BitstampExchangeAdapter extends AbstractExchangeAdapter implements 
          * This code must be converted to it's hexadecimal representation (64 uppercase characters).
          */
         byte[] rawHmac = mac.doFinal(signature.getBytes(UTF_8));
-        encodedSignature = new String(Hex.encodeHex(rawHmac)).toUpperCase();
+        encodedSignature = toHex(rawHmac).toUpperCase();
         LOG.info(() -> ">>>> Encoded signature = \n" + encodedSignature + "\n");
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
-      //------
 
       // Request headers required by Exchange
       final Map<String, String> requestHeaders = createHeaderParamMap();
@@ -867,6 +863,14 @@ public class BitstampExchangeAdapter extends AbstractExchangeAdapter implements 
       LOG.error(errorMsg, e);
       throw new TradingApiException(errorMsg, e);
     }
+  }
+
+  private String toHex(byte[] byteArrayToConvert) {
+    final StringBuilder hexString = new StringBuilder();
+    for (final byte aByte : byteArrayToConvert) {
+      hexString.append(String.format("%02x", aByte & 0xff));
+    }
+    return hexString.toString();
   }
 
   /*
