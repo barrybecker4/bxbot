@@ -140,7 +140,7 @@ public class TestBitstampExchangeAdapter extends AbstractExchangeAdapter {
   @Before
   public void setupForEachTest() {
     authenticationConfig = PowerMock.createMock(AuthenticationConfig.class);
-    expect(authenticationConfig.getItem("client-id")).andReturn(CLIENT_ID);
+    //expect(authenticationConfig.getItem("client-id")).andReturn(CLIENT_ID);
     expect(authenticationConfig.getItem("key")).andReturn(KEY);
     expect(authenticationConfig.getItem("secret")).andReturn(SECRET);
 
@@ -964,10 +964,11 @@ public class TestBitstampExchangeAdapter extends AbstractExchangeAdapter {
     PowerMock.verifyAll();
   }
 
+  /*
   @Test(expected = IllegalArgumentException.class)
   public void testExchangeAdapterThrowsExceptionIfClientIdConfigIsMissing() {
     PowerMock.reset(authenticationConfig);
-    expect(authenticationConfig.getItem("client-id")).andReturn(null);
+    //expect(authenticationConfig.getItem("client-id")).andReturn(null);
     expect(authenticationConfig.getItem("key")).andReturn("your_client_key");
     expect(authenticationConfig.getItem("secret")).andReturn("your_client_secret");
     PowerMock.replayAll();
@@ -976,12 +977,12 @@ public class TestBitstampExchangeAdapter extends AbstractExchangeAdapter {
     exchangeAdapter.init(exchangeConfig);
 
     PowerMock.verifyAll();
-  }
+  }*/
 
   @Test(expected = IllegalArgumentException.class)
   public void testExchangeAdapterThrowsExceptionIfPublicKeyConfigIsMissing() {
     PowerMock.reset(authenticationConfig);
-    expect(authenticationConfig.getItem("client-id")).andReturn("your-client-id");
+    //expect(authenticationConfig.getItem("client-id")).andReturn("your-client-id");
     expect(authenticationConfig.getItem("key")).andReturn(null);
     expect(authenticationConfig.getItem("secret")).andReturn("your_client_secret");
     PowerMock.replayAll();
@@ -995,7 +996,7 @@ public class TestBitstampExchangeAdapter extends AbstractExchangeAdapter {
   @Test(expected = IllegalArgumentException.class)
   public void testExchangeAdapterThrowsExceptionIfSecretConfigIsMissing() {
     PowerMock.reset(authenticationConfig);
-    expect(authenticationConfig.getItem("client-id")).andReturn("your-client-id");
+    //expect(authenticationConfig.getItem("client-id")).andReturn("your-client-id");
     expect(authenticationConfig.getItem("key")).andReturn("your-client-key");
     expect(authenticationConfig.getItem("secret")).andReturn(null);
     PowerMock.replayAll();
@@ -1265,7 +1266,7 @@ public class TestBitstampExchangeAdapter extends AbstractExchangeAdapter {
     final Map<String, String> requestHeaderMap =
             PowerMock.createPartialMock(HashMap.class, "put");
     expect(requestHeaderMap.put(eq("Content-Type"), eq("application/x-www-form-urlencoded")))
-            .andStubReturn(null);
+           .andStubReturn(null);
     expect(requestHeaderMap.put("X-Auth", "BITSTAMP key123"))
             .andStubReturn(null);
     expect(requestHeaderMap.put(eq("X-Auth-Signature"), anyString()))

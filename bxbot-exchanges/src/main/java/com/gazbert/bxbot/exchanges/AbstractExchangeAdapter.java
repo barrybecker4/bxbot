@@ -391,7 +391,7 @@ abstract class AbstractExchangeAdapter {
 
   private void setRequestHeaders(
       HttpURLConnection exchangeConnection, Map<String, String> requestHeaders) {
-    // Er, perhaps, we need to be a bit more stealth here...
+    // Er, perhaps, we need to be a bit more stealthy here...
     // This was needed for some exchanges back in the day!
     exchangeConnection.setRequestProperty(
         "User-Agent",

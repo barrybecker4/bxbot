@@ -70,13 +70,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import org.apache.commons.codec.binary.Hex;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-
 
 
 /**
@@ -142,12 +141,11 @@ public class BitstampExchangeAdapter extends AbstractExchangeAdapter implements 
   private static final String KEY_PROPERTY_NAME = "key";
   private static final String SECRET_PROPERTY_NAME = "secret";
 
-  private String clientId = "";
-  private String key = "";
-  private String secret = "";
+  //private String clientId = "";
+  private String apiKey = "";
+  private String apiSecret = "";
 
   private Mac mac;
-  private long nonce = 0;
   private boolean initializedMacAuthentication = false;
 
   private Gson gson;
@@ -157,8 +155,6 @@ public class BitstampExchangeAdapter extends AbstractExchangeAdapter implements 
     LOG.info(() -> "About to initialise Bitstamp ExchangeConfig: " + config);
     setAuthenticationConfig(config);
     setNetworkConfig(config);
-
-    nonce = System.currentTimeMillis() / 1000;
     initSecureMessageLayer();
     initGson();
   }
@@ -800,39 +796,32 @@ public class BitstampExchangeAdapter extends AbstractExchangeAdapter implements 
         params = createRequestParamMap();
       }
 
-      // old way is to set key, nonce, and signature in params
-      //params.put("key", key);
-      //params.put("nonce", Long.toString(nonce));
-
       // Create MAC message for signature
-      // message = nonce + client_id + api_key
-      mac.reset(); // force reset
-      mac.update(String.valueOf(nonce).getBytes(UTF_8));
-      mac.update(clientId.getBytes(UTF_8));
-      mac.update(key.getBytes(UTF_8));
-
-      /*
-       * Signature is a HMAC-SHA256 encoded message containing: nonce, client ID and API key.
-       * The HMAC-SHA256 code must be generated using a secret key that was generated with your
-       * API key.
-       * This code must be converted to it's hexadecimal representation (64 uppercase characters).
-       *
-       * signature = hmac.new(API_SECRET, msg=message, digestmod=hashlib.sha256).hexdigest().upper()
-       */
-      //final String signature = toHex(mac.doFinal()).toUpperCase();
-      //params.put("signature", signature);
+      String nonce = UUID.randomUUID().toString();
+      //mac.reset(); // force reset
+      //mac.update(nonce.getBytes(UTF_8));
+      //mac.update(clientId.getBytes(UTF_8));
+      //mac.update(apiKey.getBytes(UTF_8));
 
       //------
 
-      String apiKey = String.format("%s %s", "BITSTAMP", key);
-      String apiKeySecret = secret;
+      // Build the URL with query param args in it
+      final StringBuilder postData = new StringBuilder("offset=1");
+      for (final Map.Entry<String, String> param : params.entrySet()) {
+        postData.append("&");
+        postData.append(param.getKey());
+        postData.append("=");
+        postData.append(URLEncoder.encode(param.getValue(), UTF_8));
+      }
+
+      String apiKey = String.format("%s %s", "BITSTAMP", this.apiKey);
       String httpVerb = "POST";
       String urlPath = API_PATH + apiMethod + "/";
       String urlQuery = "";
       String timestamp = String.valueOf(System.currentTimeMillis());
       String contentType = "application/x-www-form-urlencoded";
-      String payloadString = "offset=1";
-      String signature = apiKey
+      String payloadString = postData.toString();
+      final String signature = apiKey
               + httpVerb
               + URL_HOST
               + urlPath
@@ -843,44 +832,36 @@ public class BitstampExchangeAdapter extends AbstractExchangeAdapter implements 
               + VERSION
               + payloadString;
 
-      try {
-        SecretKeySpec secretKey =
-                new SecretKeySpec(apiKeySecret.getBytes(UTF_8), "HmacSHA256");
-        Mac mac = Mac.getInstance("HmacSHA256");
-        mac.init(secretKey);
-        byte[] rawHmac = mac.doFinal(signature.getBytes(UTF_8));
-        signature = new String(Hex.encodeHex(rawHmac)).toUpperCase();
+      LOG.info(() -> ">>>> Raw signature = \n" + signature + "\n");
+      String encodedSignature;
 
+      try {
+        /*
+         * Signature is a HMAC-SHA256 encoded message containing: nonce, client ID and API key.
+         * The HMAC-SHA256 code must be generated using a secret key that was generated with your
+         * API key.
+         * This code must be converted to it's hexadecimal representation (64 uppercase characters).
+         */
+        byte[] rawHmac = mac.doFinal(signature.getBytes(UTF_8));
+        encodedSignature = new String(Hex.encodeHex(rawHmac)).toUpperCase();
+        LOG.info(() -> ">>>> Encoded signature = \n" + encodedSignature + "\n");
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
       //------
 
-      // increment ready for next call...
-      nonce++;
-
-      // Build the URL with query param args in it
-      final StringBuilder postData = new StringBuilder();
-      for (final Map.Entry<String, String> param : params.entrySet()) {
-        if (postData.length() > 0) {
-          postData.append("&");
-        }
-        postData.append(param.getKey());
-        postData.append("=");
-        postData.append(URLEncoder.encode(param.getValue(), UTF_8));
-      }
-
       // Request headers required by Exchange
       final Map<String, String> requestHeaders = createHeaderParamMap();
-      requestHeaders.put("Content-Type", "application/x-www-form-urlencoded");
       requestHeaders.put("X-Auth", apiKey);
-      requestHeaders.put("X-Auth-Signature", signature);
-      requestHeaders.put("X-Auth-Nonce", Long.toString(nonce));
+      requestHeaders.put("X-Auth-Signature", encodedSignature);
+      requestHeaders.put("X-Auth-Nonce", nonce);
       requestHeaders.put("X-Auth-Timestamp", timestamp);
       requestHeaders.put("X-Auth-Version", VERSION);
+      requestHeaders.put("Content-Type", "application/x-www-form-urlencoded");
 
       // MUST have the trailing slash else exchange barfs...
       final URL url = new URL(API_BASE_URL + apiMethod + "/");
+
       return makeNetworkRequest(url, "POST", postData.toString(), requestHeaders);
 
     } catch (MalformedURLException e) {
@@ -888,14 +869,6 @@ public class BitstampExchangeAdapter extends AbstractExchangeAdapter implements 
       LOG.error(errorMsg, e);
       throw new TradingApiException(errorMsg, e);
     }
-  }
-
-  private String toHex(byte[] byteArrayToConvert) {
-    final StringBuilder hexString = new StringBuilder();
-    for (final byte aByte : byteArrayToConvert) {
-      hexString.append(String.format("%02x", aByte & 0xff));
-    }
-    return hexString.toString();
   }
 
   /*
@@ -907,7 +880,7 @@ public class BitstampExchangeAdapter extends AbstractExchangeAdapter implements 
   private void initSecureMessageLayer() {
     try {
       final SecretKeySpec keyspec =
-          new SecretKeySpec(secret.getBytes(UTF_8), "HmacSHA256");
+          new SecretKeySpec(apiSecret.getBytes(UTF_8), "HmacSHA256");
       mac = Mac.getInstance("HmacSHA256");
       mac.init(keyspec);
       initializedMacAuthentication = true;
@@ -928,9 +901,9 @@ public class BitstampExchangeAdapter extends AbstractExchangeAdapter implements 
 
   private void setAuthenticationConfig(ExchangeConfig exchangeConfig) {
     final AuthenticationConfig authenticationConfig = getAuthenticationConfig(exchangeConfig);
-    clientId = getAuthenticationConfigItem(authenticationConfig, CLIENT_ID_PROPERTY_NAME);
-    key = getAuthenticationConfigItem(authenticationConfig, KEY_PROPERTY_NAME);
-    secret = getAuthenticationConfigItem(authenticationConfig, SECRET_PROPERTY_NAME);
+    //clientId = getAuthenticationConfigItem(authenticationConfig, CLIENT_ID_PROPERTY_NAME);
+    apiKey = getAuthenticationConfigItem(authenticationConfig, KEY_PROPERTY_NAME);
+    apiSecret = getAuthenticationConfigItem(authenticationConfig, SECRET_PROPERTY_NAME);
   }
 
   // --------------------------------------------------------------------------
