@@ -52,10 +52,10 @@ import org.junit.Test;
 public class BitstampIT {
 
   private static final String MARKET_ID = "btcusd";
-  private static final BigDecimal BUY_ORDER_PRICE = new BigDecimal("100.17");
-  private static final BigDecimal BUY_ORDER_QUANTITY = new BigDecimal("0.1"); // in BTC
+  //private static final BigDecimal BUY_ORDER_PRICE = new BigDecimal("100.17");
+  //private static final BigDecimal BUY_ORDER_QUANTITY = new BigDecimal("0.1"); // in BTC
 
-  private static final String CLIENT_ID = "clientId123";
+  //private static final String CLIENT_ID = "clientId123";
   private static final String KEY = "key123";
   private static final String SECRET = "notGonnaTellYa";
   private static final List<Integer> nonFatalNetworkErrorCodes = Arrays.asList(502, 503, 504);
@@ -75,7 +75,7 @@ public class BitstampIT {
   @Before
   public void setupForEachTest() {
     authenticationConfig = createMock(AuthenticationConfig.class);
-    expect(authenticationConfig.getItem("client-id")).andReturn(CLIENT_ID);
+    //expect(authenticationConfig.getItem("client-id")).andReturn(CLIENT_ID);
     expect(authenticationConfig.getItem("key")).andReturn(KEY);
     expect(authenticationConfig.getItem("secret")).andReturn(SECRET);
 
