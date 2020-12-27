@@ -781,11 +781,7 @@ public class BitstampExchangeAdapter extends AbstractExchangeAdapter implements 
       String apiMethod, Map<String, String> params)
       throws ExchangeNetworkException, TradingApiException {
 
-    if (!initializedMacAuthentication) {
-      final String errorMsg = "MAC Message security layer has not been initialized.";
-      LOG.error(errorMsg);
-      throw new IllegalStateException(errorMsg);
-    }
+    verifyMacInitialized();
 
     try {
       // Setup common params for the API call
@@ -793,65 +789,10 @@ public class BitstampExchangeAdapter extends AbstractExchangeAdapter implements 
         params = createRequestParamMap();
       }
 
-      // Create MAC message for signature
       String nonce = UUID.randomUUID().toString();
-      //mac.reset(); // force reset
-      //mac.update(nonce.getBytes(UTF_8));
-      //mac.update(clientId.getBytes(UTF_8));
-      //mac.update(apiKey.getBytes(UTF_8));
+      final String postData = createPostData(params);
 
-      // Build the URL with query param args in it
-      final StringBuilder postData = new StringBuilder("offset=1");
-      for (final Map.Entry<String, String> param : params.entrySet()) {
-        postData.append("&");
-        postData.append(param.getKey());
-        postData.append("=");
-        postData.append(URLEncoder.encode(param.getValue(), UTF_8));
-      }
-
-      String apiKey = String.format("%s %s", "BITSTAMP", this.apiKey);
-      String httpVerb = "POST";
-      String urlPath = API_PATH + apiMethod + "/";
-      String urlQuery = "";
-      String timestamp = String.valueOf(System.currentTimeMillis());
-      String contentType = "application/x-www-form-urlencoded";
-      String payloadString = postData.toString();
-      final String signature = apiKey
-              + httpVerb
-              + URL_HOST
-              + urlPath
-              + urlQuery
-              + contentType
-              + nonce
-              + timestamp
-              + VERSION
-              + payloadString;
-
-      LOG.info(() -> ">>>> Raw signature = \n" + signature + "\n");
-      String encodedSignature;
-
-      try {
-        /*
-         * Signature is a HMAC-SHA256 encoded message containing: nonce, client ID and API key.
-         * The HMAC-SHA256 code must be generated using a secret key that was generated with your
-         * API key.
-         * This code must be converted to it's hexadecimal representation (64 uppercase characters).
-         */
-        byte[] rawHmac = mac.doFinal(signature.getBytes(UTF_8));
-        encodedSignature = toHex(rawHmac).toUpperCase();
-        LOG.info(() -> ">>>> Encoded signature = \n" + encodedSignature + "\n");
-      } catch (Exception e) {
-        throw new RuntimeException(e);
-      }
-
-      // Request headers required by Exchange
-      final Map<String, String> requestHeaders = createHeaderParamMap();
-      requestHeaders.put("X-Auth", apiKey);
-      requestHeaders.put("X-Auth-Signature", encodedSignature);
-      requestHeaders.put("X-Auth-Nonce", nonce);
-      requestHeaders.put("X-Auth-Timestamp", timestamp);
-      requestHeaders.put("X-Auth-Version", VERSION);
-      requestHeaders.put("Content-Type", "application/x-www-form-urlencoded");
+      final Map<String, String> requestHeaders = makeRequestHeaders(apiMethod, nonce, postData);
 
       // MUST have the trailing slash else exchange barfs...
       final URL url = new URL(API_BASE_URL + apiMethod + "/");
@@ -863,6 +804,67 @@ public class BitstampExchangeAdapter extends AbstractExchangeAdapter implements 
       LOG.error(errorMsg, e);
       throw new TradingApiException(errorMsg, e);
     }
+  }
+
+  private void verifyMacInitialized() {
+    if (!initializedMacAuthentication) {
+      final String errorMsg = "MAC Message security layer has not been initialized.";
+      LOG.error(errorMsg);
+      throw new IllegalStateException(errorMsg);
+    }
+  }
+
+  // Build the URL with query param args in it
+  private String createPostData(Map<String, String> params) {
+    final StringBuilder postData = new StringBuilder("offset=1");
+    for (final Map.Entry<String, String> param : params.entrySet()) {
+      postData.append("&");
+      postData.append(param.getKey());
+      postData.append("=");
+      postData.append(URLEncoder.encode(param.getValue(), UTF_8));
+    }
+    return postData.toString();
+  }
+
+  private Map<String, String> makeRequestHeaders(String apiMethod, String nonce, String postData) {
+    String apiKey = String.format("%s %s", "BITSTAMP", this.apiKey);
+    String httpVerb = "POST";
+    String urlPath = API_PATH + apiMethod + "/";
+    String urlQuery = "";
+    String timestamp = String.valueOf(System.currentTimeMillis());
+    String contentType = "application/x-www-form-urlencoded";
+    final String signature = apiKey
+            + httpVerb
+            + URL_HOST
+            + urlPath
+            + urlQuery
+            + contentType
+            + nonce
+            + timestamp
+            + VERSION
+            + postData;
+
+    String encodedSignature;
+    try {
+      /*
+       * Signature is a HMAC-SHA256 encoded message containing signature
+       * This code must be converted to it's hexadecimal representation (64 uppercase characters).
+       */
+      byte[] rawHmac = mac.doFinal(signature.getBytes(UTF_8));
+      encodedSignature = toHex(rawHmac).toUpperCase();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+
+    // Request headers required by Exchange
+    final Map<String, String> requestHeaders = createHeaderParamMap();
+    requestHeaders.put("X-Auth", apiKey);
+    requestHeaders.put("X-Auth-Signature", encodedSignature);
+    requestHeaders.put("X-Auth-Nonce", nonce);
+    requestHeaders.put("X-Auth-Timestamp", timestamp);
+    requestHeaders.put("X-Auth-Version", VERSION);
+    requestHeaders.put("Content-Type", "application/x-www-form-urlencoded");
+    return requestHeaders;
   }
 
   private String toHex(byte[] byteArrayToConvert) {
