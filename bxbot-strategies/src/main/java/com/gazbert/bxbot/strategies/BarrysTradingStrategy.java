@@ -64,7 +64,6 @@ public class BarrysTradingStrategy implements TradingStrategy {
     strategyConfig = new BarrysTradingStrategyConfig(config);
     this.transactionRepo = transactionRepo;
     LOG.info(() -> "Barry's Trading Strategy was initialised successfully!");
-    //TempDbDemo.demoDb(transactionRepo);
   }
 
   /**

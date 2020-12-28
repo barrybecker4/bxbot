@@ -797,7 +797,7 @@ public class BitstampExchangeAdapter extends AbstractExchangeAdapter implements 
       // MUST have the trailing slash else exchange barfs...
       final URL url = new URL(API_BASE_URL + apiMethod + "/");
 
-      return makeNetworkRequest(url, "POST", postData.toString(), requestHeaders);
+      return makeNetworkRequest(url, "POST", postData, requestHeaders);
 
     } catch (MalformedURLException e) {
       final String errorMsg = UNEXPECTED_IO_ERROR_MSG;
