@@ -33,38 +33,38 @@ import static org.easymock.EasyMock.verify;
 import com.gazbert.bxbot.domain.transaction.TransactionEntry;
 import com.gazbert.bxbot.repository.TransactionsRepository;
 import com.gazbert.bxbot.strategy.api.IStrategyConfigItems;
-import com.gazbert.bxbot.strategy.api.StrategyException;
-import com.gazbert.bxbot.trading.api.ExchangeNetworkException;
 import com.gazbert.bxbot.trading.api.Market;
 import com.gazbert.bxbot.trading.api.MarketOrder;
 import com.gazbert.bxbot.trading.api.MarketOrderBook;
-import com.gazbert.bxbot.trading.api.OpenOrder;
 import com.gazbert.bxbot.trading.api.OrderType;
 import com.gazbert.bxbot.trading.api.TradingApi;
-import com.gazbert.bxbot.trading.api.TradingApiException;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
 
 /**
- * Tests the behaviour of the example Scalping Strategy.
+ * Tests the behaviour of the multi-order Scalping Strategy.
  */
-public class TestBarrysTradingStrategy {
+public class TestBarrysMultiOrderTradingStrategy {
 
   private static final String MARKET_ID = "btc_usd";
   private static final String MARKET_NAME = "BTC_USD";
   private static final String BASE_CURRENCY = "BTC";
   private static final String COUNTER_CURRENCY = "USD";
 
+  private static final String MAX_CONCURRENT_SELL_ORDERS = "3";
   private static final String CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT = "20"; // USD amount
-  private static final String CONFIG_ITEM_MINIMUM_PERCENTAGE_GAIN = "2";
+  private static final String CONFIG_ITEM_PERCENT_CHANGE_THRESHOLD = "4";
   private static final String ORDER_ID = "45345346";
 
-  private static final String strategy = "Barry's strategy";
+  private static final String strategy = "Barry's multi-order strategy";
   private static final String exchangeApi = "Bitstamp API";
 
   private TradingContext context;
@@ -98,10 +98,13 @@ public class TestBarrysTradingStrategy {
 
     // expect config to be loaded
     expect(config.getStrategyId()).andReturn(strategy).anyTimes();
+    expect(config.getConfigItem("max-concurrent-sell-orders"))
+        .andReturn(MAX_CONCURRENT_SELL_ORDERS);
     expect(config.getConfigItem("counter-currency-buy-order-amount"))
         .andReturn(CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT);
-    expect(config.getConfigItem("minimum-percentage-gain"))
-        .andReturn(CONFIG_ITEM_MINIMUM_PERCENTAGE_GAIN);
+    expect(config.getConfigItem("percent-change-threshold"))
+            .andReturn(CONFIG_ITEM_PERCENT_CHANGE_THRESHOLD);
+
 
     // expect Market name to be logged zero or more times.
     MarketOrderBook marketOrderBook = createMock(MarketOrderBook.class);
@@ -133,27 +136,24 @@ public class TestBarrysTradingStrategy {
     final BigDecimal askSpotPrice = new BigDecimal("1455.016");
     expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
 
-    // expect to get amount of base currency to buy for given counter currency amount
-    final BigDecimal lastTradePrice = new BigDecimal("1453.014"); //("1454.018");
-
     final BigDecimal amountOfUnitsToBuy = new BigDecimal("0.01375499");
     expect(context.getAmountOfBaseCurrencyToBuy(
             new BigDecimal(CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT)))
             .andReturn(amountOfUnitsToBuy);
 
     OrderState expBuyOrder =
-            new OrderState(ORDER_ID, OrderType.BUY, bidSpotPrice, amountOfUnitsToBuy);
+            new OrderState(ORDER_ID, OrderType.BUY, askSpotPrice, amountOfUnitsToBuy);
 
-    expect(context.sendBuyOrder(amountOfUnitsToBuy, lastTradePrice)).andReturn(expBuyOrder);
+    expect(context.sendBuyOrder(amountOfUnitsToBuy, askSpotPrice)).andReturn(expBuyOrder);
 
     TransactionEntry expEntry = new TransactionEntry(ORDER_ID, OrderType.BUY.getStringValue(), SENT,
-            MARKET_NAME, amountOfUnitsToBuy, bidSpotPrice, strategy, exchangeApi);
+            MARKET_NAME, amountOfUnitsToBuy, askSpotPrice, strategy, exchangeApi);
 
     expect(transactionRepo.save(expEntry)).andReturn(expEntry);
 
     replay(context, config, transactionRepo, marketBuyOrder, marketSellOrder);
 
-    final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
+    final BarrysMultiOrderTradingStrategy strategy = new BarrysMultiOrderTradingStrategy();
     strategy.init(context, config, transactionRepo);
     strategy.execute();
 
@@ -169,7 +169,7 @@ public class TestBarrysTradingStrategy {
    * - Then a new sell order is sent to the exchange
    */
   @Test
-  public void testStrategySendsNewSellOrderToExchangeWhenCurrentBuyOrderFilled() throws Exception {
+  public void testStrategySendsNewSellOrderWhenBuyOrderFilled() throws Exception {
 
     expect(context.isOrderOpen(ORDER_ID)).andReturn(false);
 
@@ -182,7 +182,8 @@ public class TestBarrysTradingStrategy {
     // mock the buy order state that was filled
     final BigDecimal lastOrderAmount = new BigDecimal("35");
     final BigDecimal lastOrderPrice = new BigDecimal("1454.018");
-    final Object orderState = createMockOrder(OrderType.BUY, lastOrderPrice, lastOrderAmount);
+    final OrderState orderState =
+            new OrderState(ORDER_ID, OrderType.BUY, lastOrderPrice, lastOrderAmount);
 
     TransactionEntry buyEntry = new TransactionEntry(
             ORDER_ID, OrderType.BUY.getStringValue(), FILLED,
@@ -190,7 +191,7 @@ public class TestBarrysTradingStrategy {
     expect(transactionRepo.save(buyEntry)).andReturn(buyEntry);
 
     // expect to send new sell order to exchange
-    final BigDecimal requiredProfitInPercent = new BigDecimal("0.02");
+    final BigDecimal requiredProfitInPercent = new BigDecimal("0.04");
     final BigDecimal newAskPrice =
         lastOrderPrice
             .multiply(requiredProfitInPercent)
@@ -206,17 +207,20 @@ public class TestBarrysTradingStrategy {
             MARKET_NAME, lastOrderAmount, newAskPrice, strategy, exchangeApi);
     expect(transactionRepo.save(sellEntry)).andReturn(sellEntry);
 
-    replay(context, config, transactionRepo, marketBuyOrder, marketSellOrder, orderState);
+    replay(context, config, transactionRepo, marketBuyOrder, marketSellOrder);
 
-    final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
+    final BarrysMultiOrderTradingStrategy strategy = new BarrysMultiOrderTradingStrategy();
 
-    // inject the existing buy order
+    // inject the existing buy order stack
+    Stack<OrderState> buyOrderStack = new Stack<>();
+    buyOrderStack.push(orderState);
+    Whitebox.setInternalState(strategy, "buyOrderStack", buyOrderStack);
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
 
     strategy.init(context, config, transactionRepo);
     strategy.execute();
 
-    verify(context, config, transactionRepo, marketBuyOrder, marketSellOrder, orderState);
+    verify(context, config, transactionRepo, marketBuyOrder, marketSellOrder);
   }
 
   /*
@@ -226,7 +230,7 @@ public class TestBarrysTradingStrategy {
    * - Given the bot has placed a buy order and it had not filled
    * - When the strategy is invoked
    * - Then the bot holds until the next trade cycle
-   */
+   *
   @Test
   public void testStrategyHoldsWhenCurrentBuyOrderIsNotFilled() throws Exception {
 
@@ -251,7 +255,7 @@ public class TestBarrysTradingStrategy {
     replay(context, config, marketBuyOrder, marketSellOrder,
         orderState, unfilledOrder);
 
-    final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
+    final BarrysMultiOrderTradingStrategy strategy = new BarrysMultiOrderTradingStrategy();
 
     // inject the existing buy order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
@@ -261,7 +265,7 @@ public class TestBarrysTradingStrategy {
 
     verify(context, config, marketBuyOrder, marketSellOrder,
         orderState, unfilledOrder);
-  }
+  }*/
 
   /*
    * Tests scenario when strategy has had its current sell order filled. We expect it to create a
@@ -270,7 +274,7 @@ public class TestBarrysTradingStrategy {
    * - Given the bot has had its current sell order filled
    * - When the strategy is invoked
    * - Then a new buy order is sent to the exchange
-   */
+   *
   @Test
   public void testStrategySendsNewBuyOrderToExchangeWhenCurrentSellOrderFilled() throws Exception {
 
@@ -309,7 +313,7 @@ public class TestBarrysTradingStrategy {
 
     replay(context, config, transactionRepo, marketBuyOrder, marketSellOrder, sellOrderState);
 
-    final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
+    final BarrysMultiOrderTradingStrategy strategy = new BarrysMultiOrderTradingStrategy();
 
     // inject the existing sell order
     Whitebox.setInternalState(strategy, "lastOrder", sellOrderState);
@@ -318,7 +322,7 @@ public class TestBarrysTradingStrategy {
     strategy.execute();
 
     verify(context, config, transactionRepo, marketBuyOrder, marketSellOrder, sellOrderState);
-  }
+  }*/
 
   /*
    * Tests scenario when strategy's current sell order is still waiting to be filled. We expect
@@ -327,7 +331,7 @@ public class TestBarrysTradingStrategy {
    * - Given the bot has placed a sell order and it has not filled
    * - When the strategy is invoked,
    * - Then the bot holds until the next trade cycle
-   */
+   *
   @Test
   public void testStrategyHoldsWhenCurrentSellOrderIsNotFilled() throws Exception {
     // expect to get current bid and ask spot prices
@@ -346,7 +350,7 @@ public class TestBarrysTradingStrategy {
 
     replay(context, config, marketBuyOrder, marketSellOrder);
 
-    final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
+    final BarrysMultiOrderTradingStrategy strategy = new BarrysMultiOrderTradingStrategy();
 
     // inject the existing sell order
     Whitebox.setInternalState(strategy, "lastOrder", expOrderState);
@@ -355,7 +359,7 @@ public class TestBarrysTradingStrategy {
     strategy.execute();
 
     verify(context, config, marketBuyOrder, marketSellOrder);
-  }
+  }*/
 
   // ------------------------------------------------------------------------
   // Timeout exception handling tests
@@ -368,7 +372,7 @@ public class TestBarrysTradingStrategy {
    * - Given the strategy has just sent initial buy order
    * - When a timeout exception is caught
    * - Then the strategy returns without error
-   */
+   *
   @Test
   public void testStrategyHandlesTimeoutExceptionWhenPlacingInitialBuyOrder() throws Exception {
     // expect to get current bid and ask spot prices
@@ -391,12 +395,12 @@ public class TestBarrysTradingStrategy {
 
     replay(context, config, marketBuyOrder, marketSellOrder);
 
-    final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
+    final BarrysMultiOrderTradingStrategy strategy = new BarrysMultiOrderTradingStrategy();
     strategy.init(context, config, transactionRepo);
     strategy.execute();
 
     verify(context, config, marketBuyOrder, marketSellOrder);
-  }
+  }*/
 
   /*
    * When attempting to send a buy order to the exchange, a timeout exception is received.
@@ -405,7 +409,7 @@ public class TestBarrysTradingStrategy {
    * - Given the strategy has just sent a buy order
    * - When a timeout exception is caught
    * - Then the strategy returns without error
-   */
+   *
   @Test
   public void testStrategyHandlesTimeoutExceptionWhenPlacingBuyOrder() throws Exception {
 
@@ -433,7 +437,7 @@ public class TestBarrysTradingStrategy {
 
     replay(context, config, marketBuyOrder, marketSellOrder, orderState);
 
-    final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
+    final BarrysMultiOrderTradingStrategy strategy = new BarrysMultiOrderTradingStrategy();
 
     // inject the existing sell order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
@@ -442,7 +446,7 @@ public class TestBarrysTradingStrategy {
     strategy.execute();
 
     verify(context, config, marketBuyOrder, marketSellOrder, orderState);
-  }
+  }*/
 
   /*
    * When attempting to send a sell order to the exchange, a timeout exception is received.
@@ -451,7 +455,7 @@ public class TestBarrysTradingStrategy {
    * - Given the strategy has just sent a sell order
    * - When a timeout exception is caught
    * - Then the strategy returns without error
-   */
+   *
   @Test
   public void testStrategyHandlesTimeoutExceptionWhenPlacingSellOrder() throws Exception {
 
@@ -481,7 +485,7 @@ public class TestBarrysTradingStrategy {
 
     replay(context, config, marketBuyOrder, marketSellOrder, orderState);
 
-    final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
+    final BarrysMultiOrderTradingStrategy strategy = new BarrysMultiOrderTradingStrategy();
 
     // inject the existing buy order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
@@ -490,7 +494,7 @@ public class TestBarrysTradingStrategy {
     strategy.execute();
 
     verify(context, config, marketBuyOrder, marketSellOrder, orderState);
-  }
+  }*/
 
   // ------------------------------------------------------------------------
   // Trading API exception handling tests
@@ -504,7 +508,7 @@ public class TestBarrysTradingStrategy {
    * - Given the strategy has just sent initial buy order
    * - When a Trading API exception is caught
    * - Then the strategy throws a Strategy exception
-   */
+   *
   @Test(expected = StrategyException.class)
   public void testStrategyHandlesTradingApiExceptionWhenPlacingInitialBuyOrder() throws Exception {
 
@@ -524,12 +528,12 @@ public class TestBarrysTradingStrategy {
 
     replay(context, config, marketBuyOrder, marketSellOrder);
 
-    final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
+    final BarrysMultiOrderTradingStrategy strategy = new BarrysMultiOrderTradingStrategy();
     strategy.init(context, config, transactionRepo);
     strategy.execute();
 
     verify(context, config, marketBuyOrder, marketSellOrder);
-  }
+  }*/
 
   /*
    * When attempting to send a buy order to the exchange, a Trading API exception is received.
@@ -538,7 +542,7 @@ public class TestBarrysTradingStrategy {
    * - Given the strategy has just sent a buy order
    * - When a Trading API exception is caught
    * - Then the strategy throws a Strategy exception
-   */
+   *
   @Test(expected = StrategyException.class)
   public void testStrategyHandlesTradingApiExceptionWhenPlacingBuyOrder() throws Exception {
 
@@ -566,7 +570,7 @@ public class TestBarrysTradingStrategy {
 
     replay(context, config, marketBuyOrder, marketSellOrder, orderState);
 
-    final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
+    final BarrysMultiOrderTradingStrategy strategy = new BarrysMultiOrderTradingStrategy();
 
     // inject the existing sell order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
@@ -575,7 +579,7 @@ public class TestBarrysTradingStrategy {
     strategy.execute();
 
     verify(context, config, marketBuyOrder, marketSellOrder, orderState);
-  }
+  }*/
 
   /*
    * When attempting to send a sell order to the exchange, a Trading API exception is received.
@@ -584,7 +588,7 @@ public class TestBarrysTradingStrategy {
    * - Given the strategy has just sent a sell order
    * - When a Trading API exception is caught
    * - Then the strategy throws a Strategy exception
-   */
+   *
   @Test(expected = StrategyException.class)
   public void testStrategyHandlesTradingApiExceptionWhenPlacingSellOrder() throws Exception {
 
@@ -618,7 +622,7 @@ public class TestBarrysTradingStrategy {
 
     replay(context, config, marketBuyOrder, marketSellOrder, orderState);
 
-    final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
+    final BarrysMultiOrderTradingStrategy strategy = new BarrysMultiOrderTradingStrategy();
 
     // inject the existing buy order
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
@@ -627,7 +631,7 @@ public class TestBarrysTradingStrategy {
     strategy.execute();
 
     verify(context, config, marketBuyOrder, marketSellOrder, orderState);
-  }
+  }*/
 
   // mock existing buy or sell order state
   private Object createMockOrder(OrderType type,

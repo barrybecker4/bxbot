@@ -3,14 +3,10 @@ package com.gazbert.bxbot.strategies;
 import com.gazbert.bxbot.strategy.api.IStrategyConfigItems;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-public class BarrysTradingStrategyConfig {
 
-  private static final Logger LOG = LogManager.getLogger();
+public class BarrysTradingStrategyConfig extends BaseStrategyConfig {
 
-  private final String strategyId;
   /**
    * The counter currency amount to use when placing the buy order. This was loaded from the
    * strategy entry in the {project-root}/config/strategies.yaml config file.
@@ -22,10 +18,6 @@ public class BarrysTradingStrategyConfig {
    * entry in the {project-root}/config/strategies.yaml config file.
    */
   private final BigDecimal minimumPercentageGain;
-
-  public String getStrategyId() {
-    return strategyId;
-  }
 
   public BigDecimal getCounterCurrencyBuyOrderAmount() {
     return counterCurrencyBuyOrderAmount;
@@ -43,46 +35,23 @@ public class BarrysTradingStrategyConfig {
    * @param config the config for the Trading Strategy.
    */
   public BarrysTradingStrategyConfig(IStrategyConfigItems config) {
-
     strategyId = config.getStrategyId();
     counterCurrencyBuyOrderAmount = retrieveCounterCurrencyBuyOrderAmount(config);
     minimumPercentageGain = retrieveMinimumPercentageGainAmount(config);
   }
 
-
   private BigDecimal retrieveCounterCurrencyBuyOrderAmount(IStrategyConfigItems config) {
-    // Get counter currency buy amount...
-    final String counterCurrencyBuyOrderAmountFromConfigAsString =
-            config.getConfigItem("counter-currency-buy-order-amount");
-
-    if (counterCurrencyBuyOrderAmountFromConfigAsString == null) {
-      // game over
-      throw new IllegalArgumentException(
-              "Mandatory counter-currency-buy-order-amount value missing in strategy.xml config.");
-    }
-    LOG.info(() -> "<counter-currency-buy-order-amount> from config is: "
-            + counterCurrencyBuyOrderAmountFromConfigAsString);
-
-    // Will fail fast if value is not a number
-    return new BigDecimal(counterCurrencyBuyOrderAmountFromConfigAsString);
+    String value = getConfigValueAsString("counter-currency-buy-order-amount", config);
+    return new BigDecimal(value);
   }
 
   private BigDecimal retrieveMinimumPercentageGainAmount(IStrategyConfigItems config) {
 
-    // Get min % gain...
-    final String minimumPercentageGainFromConfigAsString =
-            config.getConfigItem("minimum-percentage-gain");
-    if (minimumPercentageGainFromConfigAsString == null) {
-      // game over
-      throw new IllegalArgumentException(
-              "Mandatory minimum-percentage-gain value missing in strategy.xml config.");
-    }
-    LOG.info(() -> "<minimum-percentage-gain> from config is: "
-            + minimumPercentageGainFromConfigAsString);
+    String value = getConfigValueAsString("minimum-percentage-gain", config);
 
     // Will fail fast if value is not a number
     final BigDecimal minimumPercentageGainFromConfig =
-            new BigDecimal(minimumPercentageGainFromConfigAsString);
+            new BigDecimal(value);
     return minimumPercentageGainFromConfig
             .divide(new BigDecimal(100), 8, RoundingMode.HALF_UP);
   }

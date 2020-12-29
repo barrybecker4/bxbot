@@ -13,9 +13,13 @@ import com.gazbert.bxbot.trading.api.Market;
 import com.gazbert.bxbot.trading.api.MarketOrder;
 import com.gazbert.bxbot.trading.api.TradingApi;
 import com.gazbert.bxbot.trading.api.TradingApiException;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.Stack;
+import java.util.stream.Collectors;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,14 +34,18 @@ import org.springframework.stereotype.Component;
  * @author Barry Becker
  */
 @Configurable
-@Component("barrysTradingStrategy") // used to load the strategy using Spring bean injection
-public class BarrysTradingStrategy implements TradingStrategy {
+@Component("barrysMultiOrderTradingStrategy") // for Spring bean injection
+public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
 
   private static final Logger LOG = LogManager.getLogger();
+  private static final BigDecimal ONE = new BigDecimal("1");
 
   private TradingContext context;
-  private BarrysTradingStrategyConfig strategyConfig;
+  private BarrysMultiOrderTradingStrategyConfig strategyConfig;
   private OrderState lastOrder;
+
+  private final Stack<OrderState> buyOrderStack = new Stack<>();
+  private final Stack<OrderState> sellOrderStack = new Stack<>();
 
   @Autowired
   private TransactionsRepository transactionRepo;
@@ -61,7 +69,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
   public void init(TradingContext context, IStrategyConfigItems config,
                    TransactionsRepository transactionRepo) {
     this.context = context;
-    strategyConfig = new BarrysTradingStrategyConfig(config);
+    strategyConfig = new BarrysMultiOrderTradingStrategyConfig(config);
     this.transactionRepo = transactionRepo;
     LOG.info(() -> strategyConfig.getStrategyId() + " was initialised successfully!");
   }
@@ -103,37 +111,18 @@ public class BarrysTradingStrategy implements TradingStrategy {
     final BigDecimal currentAskPrice = sellOrders.get(0).getPrice();
     logPrices(currentBidPrice, currentAskPrice);
 
-    initializeLastOrderIfNeeded();
-
-    // Execute the appropriate algorithm based on the last order type.
-    if (lastOrder.type == null) {
-      executeWhenLastOrderWasNone(currentBidPrice);
+    if (lastOrder == null) {
+      sendInitialBuyOrder(currentAskPrice);
       return;
     }
-    switch (lastOrder.type) {
-      case BUY:
-        executeWhenLastOrderWasBuy();
-        break;
-      case SELL:
-        executeWhenLastOrderWasSell(currentBidPrice, currentAskPrice);
-        break;
-      default: throw new TradingApiException("Invalid Order type: " + lastOrder.type);
-    }
-  }
 
-  /**
-   * Is this the first time the Strategy has been called? If yes, initialise the OrderState
-   * so we can keep track of orders during later trace cycles.
-   */
-  private void initializeLastOrderIfNeeded() {
-    if (lastOrder == null) {
-      LOG.info(() -> context.getMarketName()
-              + " First time Strategy has been called - creating new OrderState object.");
-      lastOrder = new OrderState();
+    if (!buyOrderStack.isEmpty()) {
+      sendSellOrderIfFilledBuyOrder();
     }
-
-    // Always handy to LOG.what the last order was during each trace cycle.
-    LOG.info(() -> context.getMarketName() + " Last Order was: " + lastOrder);
+    if (!sellOrderStack.isEmpty()) {
+      checkForFilledSellOrder(currentBidPrice);
+    }
+    sendBuyOrderIfSufficientlyLow(currentBidPrice);
   }
 
   private boolean hasOrders(String type, List<MarketOrder> orders) {
@@ -152,80 +141,58 @@ public class BarrysTradingStrategy implements TradingStrategy {
   /**
    * Algo for executing when the Trading Strategy is invoked for the first time. We start off with
    * a buy order at current BID price.
+   * Send buy order at the current strike price. Push that buy order onto a buyOrderStack.
+   * (It should fill quickly, but might get stuck if price goes up quickly)
    *
-   * @param currentBidPrice the current market BID price.
-   * @throws StrategyException if an unexpected exception is received from the Exchange Adapter.
-   *     Throwing this exception indicates we want the Trading Engine to shutdown the bot.
+   * @param currentAskPrice the current market ASK price. Use the ask price to increase
+   *                        the likelihood that it goes through.
    */
-  private void executeWhenLastOrderWasNone(BigDecimal currentBidPrice)
+  private void sendInitialBuyOrder(BigDecimal currentAskPrice)
       throws StrategyException {
     LOG.info(() -> context.getMarketName()
-                + " OrderType is NONE - placing new BUY order at ["
-                + PriceUtil.formatPrice(currentBidPrice)
-                + "]");
-
-    try {
-      // Calculate amount of base currency (BTC) to buy for given amount of counter currency (USD).
-      final BigDecimal amountOfBaseCurrencyToBuy =
-          context.getAmountOfBaseCurrencyToBuy(
-                  strategyConfig.getCounterCurrencyBuyOrderAmount());
-
-      lastOrder = context.sendBuyOrder(amountOfBaseCurrencyToBuy, currentBidPrice);
-      persistTransaction(SENT, amountOfBaseCurrencyToBuy, currentBidPrice);
-    } catch (ExchangeNetworkException e) {
-      handleExchangeNetworkException("Initial Order to BUY base currency failed", e);
-    } catch (TradingApiException e) {
-      handleTradingApiException("Initial order to BUY base currency failed", e);
-    }
+                + "Just starting - placing new BUY order at ["
+                + PriceUtil.formatPrice(currentAskPrice) + "]");
+    sendBuyOrder(currentAskPrice);
   }
 
   /**
-   * Algo for executing when last order we placed on the exchanges was a BUY.
-   *
-   * <p>If last buy order filled, we try and sell at a profit.
-   *
-   * @throws StrategyException if an unexpected exception is received from the Exchange Adapter.
-   *     Throwing this exception indicates we want the Trading Engine to shutdown the bot.
+   * If the top order has been filled {
+   *    pop the top filled buy order from the buyOrderStack.
+   *    set lastTransactionPrice to the price that it was bought at.
+   *    send a sell order for lastTransactionPrice * (1 + percent-change-threshold)
+   *    push that sell order on a sellOrderStack.
+   *    (it will not fill until market goes up by percent-change-threshold)
+   * }
    */
-  private void executeWhenLastOrderWasBuy() throws StrategyException {
+  private void sendSellOrderIfFilledBuyOrder() throws StrategyException {
     try {
-      boolean lastOrderFound = context.isOrderOpen(lastOrder.id);
+      boolean lastOrderFound = context.isOrderOpen(buyOrderStack.peek().id);
 
       // If the order is not there, it must have all filled.
       if (!lastOrderFound) {
+        lastOrder = buyOrderStack.pop();
         LOG.info(() -> context.getMarketName()
-                + " ^^^ Yay!!! Last BUY Order Id [" + lastOrder.id + "] filled at ["
+                + " ^^^ Yay!!! BUY Order Id [" + lastOrder.id + "] filled at ["
                 + lastOrder.price + "]");
         persistTransaction(FILLED, lastOrder.amount, lastOrder.price);
 
         /*
-         * The last buy order was filled, so lets see if we can send a new sell order.
+         * The last buy order was filled, so lets now a new sell order.
          * IMPORTANT - new sell order ASK price must be > (last order price + exchange fees)
          *             because:
          * 1. If we put sell amount in as same amount as previous buy, the exchange barfs if
          *    we don't have enough units to cover the transaction fee.
          * 2. We could end up selling at a loss.
-         *
-         * For this example strategy, we're just going to add 2% (taken from the
-         * 'minimum-percentage-gain' config item in the {project-root}/config/strategies.yaml
-         * config file) on top of previous bid price to make a little profit and cover the exchange
-         * fees.
-         *
-         * Your algo will have other ideas on how much profit to make and when to apply the
-         * exchange fees - you could try calling the
-         * TradingApi#getPercentageOfBuyOrderTakenForExchangeFee() and
-         * TradingApi#getPercentageOfSellOrderTakenForExchangeFee() when calculating the order to
-         * send to the exchange...
          */
         final BigDecimal amountToAdd =
-                lastOrder.price.multiply(strategyConfig.getMinimumPercentageGain());
+                lastOrder.price.multiply(strategyConfig.getPercentChangeThreshold());
         LOG.info(() -> context.getMarketName()
                 + " Amount to add to last buy order fill price: " + amountToAdd);
 
         // Most exchanges (if not all) use 8 decimal places.
         // It's usually best to round up the ASK price in your calculations to maximise gains.
         final BigDecimal newAskPrice =
-            lastOrder.price.add(amountToAdd).setScale(8, RoundingMode.HALF_UP);
+                lastOrder.price.add(amountToAdd).setScale(8, RoundingMode.HALF_UP);
 
         lastOrder = context.sendSellOrder(lastOrder.amount, newAskPrice);
         persistTransaction(SENT, lastOrder.amount, newAskPrice);
@@ -240,88 +207,108 @@ public class BarrysTradingStrategy implements TradingStrategy {
   }
 
   /**
-   * Algo for executing when last order we placed on the exchange was a SELL.
-   *
-   * <p>If last sell order filled, we send a new buy order to the exchange.
-   *
-   * @param currentBidPrice the current market BID price.
-   * @param currentAskPrice the current market ASK price.
-   * @throws StrategyException if an unexpected exception is received from the Exchange Adapter.
-   *     Throwing this exception indicates we want the Trading Engine to shutdown the bot.
+   * If the top order has been filled {
+   *    pop the top filled sell order from the sellOrderStack.
+   *    set lastTransactionPrice to the price that it was sold at.
+   * }
    */
-  private void executeWhenLastOrderWasSell(
-      BigDecimal currentBidPrice, BigDecimal currentAskPrice) throws StrategyException {
+  private void checkForFilledSellOrder(BigDecimal currentBidPrice) throws StrategyException {
     try {
-      boolean lastOrderFound = context.isOrderOpen(lastOrder.id);
+      boolean lastOrderFound = context.isOrderOpen(sellOrderStack.peek().id);
 
       // If the order is not there, it must have all filled.
       if (!lastOrderFound) {
+        lastOrder = sellOrderStack.pop();
         LOG.info(() -> context.getMarketName()
-                    + " ^^^ Yay!!! Last SELL Order Id ["
-                    + lastOrder.id + "] filled at [" + lastOrder.price + "]");
+                + " ^^^ Yay!!! SELL Order Id [" + lastOrder.id + "] filled at ["
+                + lastOrder.price + "]");
         persistTransaction(FILLED, lastOrder.amount, lastOrder.price);
 
-        // Get amount of base currency (BTC) we can buy for given counter currency (USD) amount.
-        final BigDecimal amountOfBaseCurrencyToBuy =
-            context.getAmountOfBaseCurrencyToBuy(
-                strategyConfig.getCounterCurrencyBuyOrderAmount());
-
-        lastOrder = context.sendBuyOrder(amountOfBaseCurrencyToBuy, currentBidPrice);
-        persistTransaction(SENT, amountOfBaseCurrencyToBuy, currentBidPrice);
       } else {
-        logSellOrderNotFilledYet(currentAskPrice);
+        logSellOrderNotFilledYet(currentBidPrice);
       }
     } catch (ExchangeNetworkException e) {
-      handleExchangeNetworkException("New Order to BUY base currency failed", e);
+      handleExchangeNetworkException("New Order to SELL base currency failed", e);
     } catch (TradingApiException e) {
-      handleTradingApiException("New order to BUY base currency failed", e);
+      handleTradingApiException("New order to SELL base currency failed", e);
+    }
+  }
+
+  /**
+   * if currentPrice < lastTransactionPrice * (1 - percent-change-threshold)
+   *    and sellStack.size < max-concurrent-sell-orders {
+   *        then send buy order at the current bid price. Push that buy order in a buyOrderStack.
+   *        set lastTransactionPrice to the current price.
+   * }
+   *
+   * @param currentBidPrice use BID price here to try and get a bit lower than ask.
+   *                        This cold be a little risky because it may not fill.
+   */
+  private void sendBuyOrderIfSufficientlyLow(BigDecimal currentBidPrice)
+          throws StrategyException {
+    BigDecimal percentThresh = strategyConfig.getPercentChangeThreshold();
+    boolean belowThresh =
+            currentBidPrice.compareTo(lastOrder.price.multiply(ONE.subtract(percentThresh))) < 0;
+    boolean availableSlots = sellOrderStack.size() < strategyConfig.getMaxConcurrentSellOrders();
+    if (belowThresh && availableSlots) {
+      LOG.info(() -> context.getMarketName()
+              + "Placing new BUY order at ["
+              + PriceUtil.formatPrice(currentBidPrice) + "]");
+      sendBuyOrder(currentBidPrice);
+    }
+  }
+
+  private void sendBuyOrder(BigDecimal price) throws StrategyException {
+    try {
+      // Calculate amount of base currency (BTC) to buy for given amount of counter currency (USD).
+      final BigDecimal amountOfBaseCurrencyToBuy =
+              context.getAmountOfBaseCurrencyToBuy(
+                      strategyConfig.getCounterCurrencyBuyOrderAmount());
+
+      lastOrder = context.sendBuyOrder(amountOfBaseCurrencyToBuy, price);
+      buyOrderStack.push(lastOrder);
+
+      persistTransaction(SENT, amountOfBaseCurrencyToBuy, price);
+    } catch (ExchangeNetworkException e) {
+      handleExchangeNetworkException("Attempt to BUY base currency failed", e);
+    } catch (TradingApiException e) {
+      handleTradingApiException("Attempt to BUY base currency failed", e);
     }
   }
 
   /*
-   * Could be nobody has jumped on it yet, or the order is only part filled, or market
-   * has gone up and we've been outbid and have a stuck buy order. If stuck, we have to
-   * wait for the market to fall for the order to fill, or you could tweak this code to
-   * cancel the current order and raise your bid. Remember to deal with part-filled orders!
+   * Show current open buy orders.
    */
   private void logBuyNotFilledYet() {
     LOG.info(() -> context.getMarketName()
-            + " Still have BUY Order! " + lastOrder.id
-            + " waiting to fill at [" + lastOrder.price
-            + "] - holding last BUY order...");
+            + " Still have BUY Orders! " + lastOrder.id
+            + " They are " + getOrderPrices(buyOrderStack));
   }
 
   /*
-   * Could be nobody has jumped on it yet, or the order is only part filled, or market
-   * has gone down and we've been undercut and have a stuck sell order. If stuck, we have to
-   * wait for market to recover for the order to fill, or you could tweak this code to
-   * cancel the current order and lower your ask - remember to deal with any part-filled orders!
+   * Show current open sell orders.
    */
-  private void logSellOrderNotFilledYet(BigDecimal currentAskPrice) {
-    if (currentAskPrice.compareTo(lastOrder.price) < 0) {
+  private void logSellOrderNotFilledYet(BigDecimal currentBidPrice) {
+    String prices = getOrderPrices(sellOrderStack);
+    if (currentBidPrice.compareTo(lastOrder.price) <= 0) {
       LOG.info(() -> context.getMarketName()
               + " < Current ask price ["
-              + currentAskPrice
-              + "] is LOWER then last order price ["
-              + lastOrder.price
-              + "] - holding last SELL order...");
+              + currentBidPrice
+              + "] is LOWER then last sell order prices: " + prices);
 
-    } else if (currentAskPrice.compareTo(lastOrder.price) > 0) {
+    } else {
       LOG.error(() -> context.getMarketName()
               + " > Current ask price ["
-              + currentAskPrice
-              + "] is HIGHER than last order price ["
-              + lastOrder.price
-              + "] - IMPOSSIBLE! BX-bot must have sold?????");
-
-    } else if (currentAskPrice.compareTo(lastOrder.price) == 0) {
-      LOG.info(() -> context.getMarketName()
-              + " = Current ask price ["
-              + currentAskPrice
-              + "] is EQUAL to last order price ["
-              + lastOrder.price
-              + "] - holding last SELL order...");
+              + currentBidPrice
+              + "] is HIGHER than last sell order prices: " + prices
+              + " - IMPOSSIBLE! BX-bot must have sold!???");
     }
+  }
+
+  private String getOrderPrices(Stack<OrderState> orderStack) {
+    return orderStack.stream()
+            .map(orderState -> orderState.price.toString())
+            .collect(Collectors.joining(", "));
   }
 
   private void persistTransaction(TransactionEntry.Status status,

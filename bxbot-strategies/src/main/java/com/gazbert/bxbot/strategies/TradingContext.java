@@ -36,6 +36,11 @@ public class TradingContext {
     return market.getName();
   }
 
+  // typically BTC
+  public String getBaseCurrency() {
+    return market.getBaseCurrency();
+  }
+
   public List<MarketOrder> getBuyOrders() throws TradingApiException, ExchangeNetworkException {
     return tradingApi.getMarketOrders(market.getId()).getBuyOrders();
   }
