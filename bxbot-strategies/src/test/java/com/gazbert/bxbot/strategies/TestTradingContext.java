@@ -8,7 +8,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import com.gazbert.bxbot.strategy.api.StrategyConfig;
+import com.gazbert.bxbot.strategy.api.IStrategyConfigItems;
 import com.gazbert.bxbot.trading.api.Market;
 import com.gazbert.bxbot.trading.api.MarketOrder;
 import com.gazbert.bxbot.trading.api.MarketOrderBook;
@@ -30,7 +30,7 @@ public class TestTradingContext {
 
   private TradingApi tradingApi;
   private Market market;
-  private StrategyConfig config;
+  private IStrategyConfigItems config;
 
   private MarketOrderBook marketOrderBook;
   private MarketOrder marketBuyOrder;
@@ -44,7 +44,7 @@ public class TestTradingContext {
   public void setUpBeforeEachTest() throws Exception {
     tradingApi = createMock(TradingApi.class);
     market = createMock(Market.class);
-    config = createMock(StrategyConfig.class);
+    config = createMock(IStrategyConfigItems.class);
 
     // setup market order book
     marketOrderBook = createMock(MarketOrderBook.class);

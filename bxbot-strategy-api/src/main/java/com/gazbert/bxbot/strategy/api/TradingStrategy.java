@@ -44,7 +44,7 @@ public interface TradingStrategy {
    * @param market the market for this strategy.
    * @param config optional configuration for the strategy.
    */
-  void init(TradingApi tradingApi, Market market, StrategyConfig config);
+  void init(TradingApi tradingApi, Market market, IStrategyConfigItems config);
 
   /**
    * Called by the Trading Engine during each trade cycle.

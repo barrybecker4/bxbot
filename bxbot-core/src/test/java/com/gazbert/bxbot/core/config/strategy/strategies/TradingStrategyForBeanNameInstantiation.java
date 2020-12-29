@@ -23,12 +23,11 @@
 
 package com.gazbert.bxbot.core.config.strategy.strategies;
 
-import com.gazbert.bxbot.strategy.api.StrategyConfig;
+import com.gazbert.bxbot.strategy.api.IStrategyConfigItems;
 import com.gazbert.bxbot.strategy.api.StrategyException;
 import com.gazbert.bxbot.strategy.api.TradingStrategy;
 import com.gazbert.bxbot.trading.api.Market;
 import com.gazbert.bxbot.trading.api.TradingApi;
-import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Component;
 
 /**
@@ -40,7 +39,7 @@ import org.springframework.stereotype.Component;
 public class TradingStrategyForBeanNameInstantiation implements TradingStrategy {
 
   @Override
-  public void init(TradingApi tradingApi, Market market, StrategyConfig config) {
+  public void init(TradingApi tradingApi, Market market, IStrategyConfigItems config) {
   }
 
   @Override

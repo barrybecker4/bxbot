@@ -46,6 +46,7 @@ import com.gazbert.bxbot.services.config.EngineConfigService;
 import com.gazbert.bxbot.services.config.ExchangeConfigService;
 import com.gazbert.bxbot.services.config.MarketConfigService;
 import com.gazbert.bxbot.services.config.StrategyConfigService;
+import com.gazbert.bxbot.strategy.api.IStrategyConfigItems;
 import com.gazbert.bxbot.strategy.api.StrategyException;
 import com.gazbert.bxbot.strategy.api.TradingStrategy;
 import com.gazbert.bxbot.trading.api.BalanceInfo;
@@ -745,7 +746,7 @@ public class TestTradingEngine {
     tradingStrategy.init(
         eq(exchangeAdapter),
         anyObject(Market.class),
-        anyObject(com.gazbert.bxbot.strategy.api.StrategyConfig.class));
+        anyObject(IStrategyConfigItems.class));
   }
 
   private void setupConfigLoadingExpectations() {

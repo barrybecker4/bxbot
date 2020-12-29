@@ -58,6 +58,11 @@ public class TransactionEntry {
   // timestamps use California time
   private static final TimeZone TIME_ZONE = TimeZone.getTimeZone("PST");
 
+  // added columns
+  // ALTER TABLE TRANSACTIONS ADD value DOUBLE DEFAULT (price * amount) NOT NULL
+  // ALTER TABLE TRANSACTIONS ADD strategy VARCHAR(50) DEFAULT 'barrys-strategy' NOT NULL
+  // ALTER TABLE TRANSACTIONS ADD exchange VARCHAR(30) DEFAULT 'Bitstamp Exchange' NOT NULL
+
 
   @Id
   @GeneratedValue(strategy = GenerationType.AUTO)
@@ -81,6 +86,15 @@ public class TransactionEntry {
   // the bid or ask price (depending on whether this order is buy or sell) in the counter currency.
   private Double price;
 
+  // the value of the transaction in counter currence. i.e. price * amount
+  private Double value;
+
+  // the name of the strategy used to make the transaction
+  private String strategy;
+
+  // the name of the exchange API used (e.g. bitstamp, kraken, binance, etc)
+  private String exchangeApi;
+
   // when this transaction was SENT or FILLED (with resolution of trading cycle)
   @Basic
   @Temporal(TemporalType.TIMESTAMP)
@@ -93,19 +107,25 @@ public class TransactionEntry {
 
   /** a transaction. */
   public TransactionEntry(String orderId, String type, Status status,
-                          String market, Double amount, Double price) {
+                          String market, Double amount, Double price,
+                          String strategy, String exchangeApi) {
     this.orderId = orderId;
     this.type = type;
     this.status = status.toString();
     this.market = market;
     this.price = price;
     this.amount = amount;
+    this.value = price * amount;
+    this.strategy = strategy;
+    this.exchangeApi = exchangeApi;
     this.timestamp = new Date();
   }
 
   public TransactionEntry(String orderId, String type, Status status,
-                          String market, BigDecimal amount, BigDecimal price) {
-    this(orderId, type, status, market, amount.doubleValue(), price.doubleValue());
+                          String market, BigDecimal amount, BigDecimal price,
+                          String strategy, String exchangeApi) {
+    this(orderId, type, status, market, amount.doubleValue(), price.doubleValue(),
+            strategy, exchangeApi);
   }
 
   public Long getId() {
@@ -136,6 +156,18 @@ public class TransactionEntry {
     return price;
   }
 
+  public Double getValue() {
+    return value;
+  }
+
+  public String getStrategy() {
+    return strategy;
+  }
+
+  public String getExchangeApi() {
+    return exchangeApi;
+  }
+
   public Date getTimestamp() {
     return new Date(timestamp.getTime());
   }
@@ -163,7 +195,9 @@ public class TransactionEntry {
       .add("market", market)
       .add("amount", amount)
       .add("price", price)
-      .add("total", amount * price)
+      .add("value", value)
+      .add("strategy", strategy)
+      .add("exchangeApi", exchangeApi)
       .add("timestamp", format.format(timestamp))
       .toString();
   }
@@ -182,11 +216,13 @@ public class TransactionEntry {
             && status.equals(that.status)
             && market.equals(that.market)
             && amount.equals(that.amount)
-            && price.equals(that.price);
+            && price.equals(that.price)
+            && strategy.equals(that.strategy)
+            && exchangeApi.equals(that.exchangeApi);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(orderId, type, status, market, amount, price);
+    return Objects.hash(orderId, type, status, market, amount, price, strategy, exchangeApi);
   }
 }

@@ -5,7 +5,7 @@ import static com.gazbert.bxbot.domain.transaction.TransactionEntry.Status.SENT;
 
 import com.gazbert.bxbot.domain.transaction.TransactionEntry;
 import com.gazbert.bxbot.repository.TransactionsRepository;
-import com.gazbert.bxbot.strategy.api.StrategyConfig;
+import com.gazbert.bxbot.strategy.api.IStrategyConfigItems;
 import com.gazbert.bxbot.strategy.api.StrategyException;
 import com.gazbert.bxbot.strategy.api.TradingStrategy;
 import com.gazbert.bxbot.trading.api.ExchangeNetworkException;
@@ -51,14 +51,14 @@ public class BarrysTradingStrategy implements TradingStrategy {
    * @param config Contains any (optional) config you set up in the strategies.yaml file.
    */
   @Override
-  public void init(TradingApi tradingApi, Market market, StrategyConfig config) {
+  public void init(TradingApi tradingApi, Market market, IStrategyConfigItems config) {
     init(new TradingContext(tradingApi, market), config, transactionRepo);
   }
 
   /**
    * Used by tests.
    */
-  public void init(TradingContext context, StrategyConfig config,
+  public void init(TradingContext context, IStrategyConfigItems config,
                    TransactionsRepository transactionRepo) {
     this.context = context;
     strategyConfig = new BarrysTradingStrategyConfig(config);
@@ -172,10 +172,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
                   strategyConfig.getCounterCurrencyBuyOrderAmount());
 
       lastOrder = context.sendBuyOrder(amountOfBaseCurrencyToBuy, currentBidPrice);
-      transactionRepo.save(
-              new TransactionEntry(lastOrder.id, lastOrder.type.getStringValue(), SENT,
-                      context.getMarketName(), amountOfBaseCurrencyToBuy, currentBidPrice));
-
+      persistTransaction(SENT, amountOfBaseCurrencyToBuy, currentBidPrice);
     } catch (ExchangeNetworkException e) {
       handleExchangeNetworkException("Initial Order to BUY base currency failed", e);
     } catch (TradingApiException e) {
@@ -200,9 +197,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
         LOG.info(() -> context.getMarketName()
                 + " ^^^ Yay!!! Last BUY Order Id [" + lastOrder.id + "] filled at ["
                 + lastOrder.price + "]");
-        transactionRepo.save(
-                new TransactionEntry(lastOrder.id, lastOrder.type.getStringValue(), FILLED,
-                        context.getMarketName(), lastOrder.amount, lastOrder.price));
+        persistTransaction(FILLED, lastOrder.amount, lastOrder.price);
 
         /*
          * The last buy order was filled, so lets see if we can send a new sell order.
@@ -234,9 +229,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
             lastOrder.price.add(amountToAdd).setScale(8, RoundingMode.HALF_UP);
 
         lastOrder = context.sendSellOrder(lastOrder.amount, newAskPrice);
-        transactionRepo.save(
-                new TransactionEntry(lastOrder.id, lastOrder.type.getStringValue(), SENT,
-                        context.getMarketName(), lastOrder.amount, newAskPrice));
+        persistTransaction(SENT, lastOrder.amount, newAskPrice);
       } else {
         logBuyNotFilledYet();
       }
@@ -267,9 +260,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
         LOG.info(() -> context.getMarketName()
                     + " ^^^ Yay!!! Last SELL Order Id ["
                     + lastOrder.id + "] filled at [" + lastOrder.price + "]");
-        transactionRepo.save(
-                new TransactionEntry(lastOrder.id, lastOrder.type.getStringValue(), FILLED,
-                        context.getMarketName(), lastOrder.amount, lastOrder.price));
+        persistTransaction(FILLED, lastOrder.amount, lastOrder.price);
 
         // Get amount of base currency (BTC) we can buy for given counter currency (USD) amount.
         final BigDecimal amountOfBaseCurrencyToBuy =
@@ -277,9 +268,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
                 strategyConfig.getCounterCurrencyBuyOrderAmount());
 
         lastOrder = context.sendBuyOrder(amountOfBaseCurrencyToBuy, currentBidPrice);
-        transactionRepo.save(
-                new TransactionEntry(lastOrder.id, lastOrder.type.getStringValue(), SENT,
-                        context.getMarketName(), amountOfBaseCurrencyToBuy, currentBidPrice));
+        persistTransaction(SENT, amountOfBaseCurrencyToBuy, currentBidPrice);
       } else {
         logSellOrderNotFilledYet(currentAskPrice);
       }
@@ -334,6 +323,14 @@ public class BarrysTradingStrategy implements TradingStrategy {
               + lastOrder.price
               + "] - holding last SELL order...");
     }
+  }
+
+  private void persistTransaction(TransactionEntry.Status status,
+                                  BigDecimal amount, BigDecimal price) {
+    transactionRepo.save(
+            new TransactionEntry(lastOrder.id, lastOrder.type.getStringValue(), status,
+                    context.getMarketName(), amount, price,
+                    strategyConfig.getStrategyId(), context.getExchangeApi()));
   }
 
   /**

@@ -16,7 +16,7 @@
  * <p>You can pass configuration to your Strategy from the strategies.yaml file - you access it from
  * the {@link
  * com.gazbert.bxbot.strategy.api.TradingStrategy#init(com.gazbert.bxbot.trading.api.TradingApi,
- * com.gazbert.bxbot.trading.api.Market, com.gazbert.bxbot.strategy.api.StrategyConfig)} method via
+ * com.gazbert.bxbot.trading.api.Market, IStrategyConfigItems)} method via
  * the StrategyConfigImpl argument.
  *
  * <p>The Trading Engine will only send 1 thread through your strategy code at a time - you do not
@@ -27,3 +27,5 @@
  * @author gazbert
  */
 package com.gazbert.bxbot.strategies;
+
+import com.gazbert.bxbot.strategy.api.IStrategyConfigItems;

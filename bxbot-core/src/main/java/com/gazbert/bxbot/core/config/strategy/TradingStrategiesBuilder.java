@@ -93,7 +93,8 @@ public class TradingStrategiesBuilder {
 
     if (tradingStrategyConfigs.containsKey(strategyToUse)) {
       final StrategyConfig tradingStrategy = tradingStrategyConfigs.get(strategyToUse);
-      final StrategyConfigItems tradingStrategyConfig = new StrategyConfigItems();
+      final StrategyConfigItems tradingStrategyConfig =
+              new StrategyConfigItems(tradingStrategy.getId());
       final Map<String, String> configItems = tradingStrategy.getConfigItems();
       if (configItems != null && !configItems.isEmpty()) {
         tradingStrategyConfig.setItems(configItems);

@@ -23,15 +23,15 @@ public class TempDbDemo {
       return;
     }
     transactionRepo.save(new TransactionEntry("42", "BUY", SENT,
-            "Jack Bauer", 0.234, 345.0));
+            "Jack Bauer", 0.234, 345.0, "strategy", "bitstamp"));
     transactionRepo.save(new TransactionEntry("27", "SELL", SENT,
-            "Cloe O'Brian", 0.123, 2.345));
+            "Cloe O'Brian", 0.123, 2.345, "strategy", "bitstamp"));
     transactionRepo.save(new TransactionEntry("42", "BUY", FILLED,
-            "Kim Bauer", 3.456, 234.2));
+            "Kim Bauer", 3.456, 234.2, "strategy", "bitstamp"));
     transactionRepo.save(new TransactionEntry("43", "SELL", SENT,
-            "David Palmer", 4.567, 3453.3));
+            "David Palmer", 4.567, 3453.3, "strategy", "bitstamp"));
     transactionRepo.save(new TransactionEntry("45", "SELL", FILLED,
-            "Michelle Dessler", 5.678, 34534.44));
+            "Michelle Dessler", 5.678, 34534.44, "strategy", "bitstamp"));
 
     // fetch all transactions
     LOG.info(() -> "Transactions found with findAll():");

@@ -23,7 +23,7 @@
 
 package com.gazbert.bxbot.core.config.strategy;
 
-import com.gazbert.bxbot.strategy.api.StrategyConfig;
+import com.gazbert.bxbot.strategy.api.IStrategyConfigItems;
 import com.google.common.base.MoreObjects;
 import java.util.Collections;
 import java.util.HashMap;
@@ -35,9 +35,19 @@ import java.util.Set;
  *
  * @author gazbert
  */
-public final class StrategyConfigItems implements StrategyConfig {
+public final class StrategyConfigItems implements IStrategyConfigItems {
+
+  private final String strategyId;
 
   private Map<String, String> items = new HashMap<>();
+
+  public StrategyConfigItems(String strategyId) {
+    this.strategyId = strategyId;
+  }
+
+  public String getStrategyId() {
+    return strategyId;
+  }
 
   @Override
   public String getConfigItem(String key) {

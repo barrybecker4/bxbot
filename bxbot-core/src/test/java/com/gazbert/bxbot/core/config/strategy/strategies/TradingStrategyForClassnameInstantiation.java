@@ -23,7 +23,7 @@
 
 package com.gazbert.bxbot.core.config.strategy.strategies;
 
-import com.gazbert.bxbot.strategy.api.StrategyConfig;
+import com.gazbert.bxbot.strategy.api.IStrategyConfigItems;
 import com.gazbert.bxbot.strategy.api.StrategyException;
 import com.gazbert.bxbot.strategy.api.TradingStrategy;
 import com.gazbert.bxbot.trading.api.Market;
@@ -37,7 +37,7 @@ import com.gazbert.bxbot.trading.api.TradingApi;
 public class TradingStrategyForClassnameInstantiation implements TradingStrategy {
 
   @Override
-  public void init(TradingApi tradingApi, Market market, StrategyConfig config) {
+  public void init(TradingApi tradingApi, Market market, IStrategyConfigItems config) {
   }
 
   @Override

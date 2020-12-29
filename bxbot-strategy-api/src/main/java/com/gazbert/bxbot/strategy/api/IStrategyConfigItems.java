@@ -38,7 +38,14 @@ import java.util.Set;
  * @author gazbert
  * @since 1.0
  */
-public interface StrategyConfig {
+public interface IStrategyConfigItems {
+
+  /**
+   * The id of the strategy.
+   *
+   * @return id of the strategy
+   */
+  String getStrategyId();
 
   /**
    * Fetches a config item for a given key.

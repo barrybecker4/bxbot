@@ -32,7 +32,7 @@ import static org.easymock.EasyMock.verify;
 
 import com.gazbert.bxbot.domain.transaction.TransactionEntry;
 import com.gazbert.bxbot.repository.TransactionsRepository;
-import com.gazbert.bxbot.strategy.api.StrategyConfig;
+import com.gazbert.bxbot.strategy.api.IStrategyConfigItems;
 import com.gazbert.bxbot.strategy.api.StrategyException;
 import com.gazbert.bxbot.trading.api.ExchangeNetworkException;
 import com.gazbert.bxbot.trading.api.Market;
@@ -69,10 +69,13 @@ public class TestBarrysTradingStrategy {
   private static final String CONFIG_ITEM_MINIMUM_PERCENTAGE_GAIN = "2";
   private static final String ORDER_ID = "45345346";
 
+  private static final String strategy = "Barry's strategy";
+  private static final String exchangeApi = "Bitstamp API";
+
   private TradingContext context;
   private TradingApi tradingApi;
   private Market market;
-  private StrategyConfig config;
+  private IStrategyConfigItems config;
   private TransactionsRepository transactionRepo;
 
   private MarketOrderBook marketOrderBook;
@@ -88,7 +91,7 @@ public class TestBarrysTradingStrategy {
     context = createMock(TradingContext.class);
     tradingApi = createMock(TradingApi.class);
     market = createMock(Market.class);
-    config = createMock(StrategyConfig.class);
+    config = createMock(IStrategyConfigItems.class);
     transactionRepo = createMock(TransactionsRepository.class);
 
     // setup market order book
@@ -101,12 +104,14 @@ public class TestBarrysTradingStrategy {
     marketSellOrders.add(marketSellOrder);
 
     // expect config to be loaded
+    expect(config.getStrategyId()).andReturn(strategy).anyTimes();
     expect(config.getConfigItem("counter-currency-buy-order-amount"))
         .andReturn(CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT);
     expect(config.getConfigItem("minimum-percentage-gain"))
         .andReturn(CONFIG_ITEM_MINIMUM_PERCENTAGE_GAIN);
 
     // expect Market name to be logged zero or more times.
+    expect(context.getExchangeApi()).andReturn(exchangeApi).anyTimes();
     expect(context.getMarketName()).andReturn(MARKET_NAME).anyTimes();
     expect(tradingApi.getMarketOrders(MARKET_ID)).andReturn(marketOrderBook).anyTimes();
     expect(market.getName()).andReturn(MARKET_NAME).anyTimes();
@@ -148,7 +153,7 @@ public class TestBarrysTradingStrategy {
     expect(context.sendBuyOrder(amountOfUnitsToBuy, lastTradePrice)).andReturn(expBuyOrder);
 
     TransactionEntry expEntry = new TransactionEntry(ORDER_ID, OrderType.BUY.getStringValue(), SENT,
-            MARKET_NAME, amountOfUnitsToBuy, bidSpotPrice);
+            MARKET_NAME, amountOfUnitsToBuy, bidSpotPrice, strategy, exchangeApi);
 
     expect(transactionRepo.save(expEntry)).andReturn(expEntry);
 
@@ -187,7 +192,7 @@ public class TestBarrysTradingStrategy {
 
     TransactionEntry buyEntry = new TransactionEntry(
             ORDER_ID, OrderType.BUY.getStringValue(), FILLED,
-            MARKET_NAME, lastOrderAmount, lastOrderPrice);
+            MARKET_NAME, lastOrderAmount, lastOrderPrice, strategy, exchangeApi);
     expect(transactionRepo.save(buyEntry)).andReturn(buyEntry);
 
     // expect to send new sell order to exchange
@@ -205,7 +210,7 @@ public class TestBarrysTradingStrategy {
 
     TransactionEntry sellEntry = new TransactionEntry(
             ORDER_ID, OrderType.SELL.getStringValue(), SENT,
-            MARKET_NAME, lastOrderAmount, newAskPrice);
+            MARKET_NAME, lastOrderAmount, newAskPrice, strategy, exchangeApi);
     expect(transactionRepo.save(sellEntry)).andReturn(sellEntry);
 
     replay(context, config, transactionRepo, marketBuyOrder, marketSellOrder, orderState);
@@ -285,7 +290,7 @@ public class TestBarrysTradingStrategy {
 
     final TransactionEntry sellEntry =
             new TransactionEntry(ORDER_ID, OrderType.SELL.getStringValue(), FILLED,
-                    MARKET_NAME, lastOrderAmount, lastOrderPrice);
+                    MARKET_NAME, lastOrderAmount, lastOrderPrice, strategy, exchangeApi);
     expect(transactionRepo.save(sellEntry)).andReturn(sellEntry);
 
     // expect to get current bid and ask spot prices
@@ -301,7 +306,7 @@ public class TestBarrysTradingStrategy {
 
     final TransactionEntry buyEntry =
             new TransactionEntry(ORDER_ID, OrderType.BUY.getStringValue(), SENT,
-                    MARKET_NAME, amountOfUnitsToBuy, bidSpotPrice);
+                    MARKET_NAME, amountOfUnitsToBuy, bidSpotPrice, strategy, exchangeApi);
     expect(transactionRepo.save(buyEntry)).andReturn(buyEntry);
 
     // expect to send new buy order to exchange
@@ -604,7 +609,7 @@ public class TestBarrysTradingStrategy {
 
     final TransactionEntry sellEntry =
             new TransactionEntry(ORDER_ID, OrderType.SELL.getStringValue(), FILLED,
-                    MARKET_NAME, lastOrderAmount, bidSpotPrice);
+                    MARKET_NAME, lastOrderAmount, bidSpotPrice, strategy, exchangeApi);
     expect(transactionRepo.save(sellEntry)).andReturn(sellEntry);
 
     // expect to send new sell order to exchange and receive timeout exception

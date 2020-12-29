@@ -28,6 +28,10 @@ public class TradingContext {
     this.market = market;
   }
 
+  public String getExchangeApi() {
+    return tradingApi.getImplName();
+  }
+
   public String getMarketName() {
     return market.getName();
   }

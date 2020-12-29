@@ -42,10 +42,11 @@ public class TestStrategyConfigItems {
 
   @Test
   public void testAddingAndFetchingConfigItems() {
-    final StrategyConfigItems strategyConfig = new StrategyConfigItems();
+    final StrategyConfigItems strategyConfig = new StrategyConfigItems("some strategy");
     strategyConfig.getItems().put(BUY_PRICE_CONFIG_ITEM_KEY, BUY_PRICE_CONFIG_ITEM_VALUE);
     strategyConfig.getItems().put(AMOUNT_TO_BUY_CONFIG_ITEM_KEY, AMOUNT_TO_BUY_CONFIG_ITEM_VALUE);
 
+    assertEquals("some strategy", strategyConfig.getStrategyId());
     assertEquals(2, strategyConfig.getItems().size());
     assertEquals(
         BUY_PRICE_CONFIG_ITEM_VALUE, strategyConfig.getItems().get(BUY_PRICE_CONFIG_ITEM_KEY));

@@ -23,7 +23,7 @@
 
 package com.gazbert.bxbot.strategies;
 
-import com.gazbert.bxbot.strategy.api.StrategyConfig;
+import com.gazbert.bxbot.strategy.api.IStrategyConfigItems;
 import com.gazbert.bxbot.strategy.api.StrategyException;
 import com.gazbert.bxbot.strategy.api.TradingStrategy;
 import com.gazbert.bxbot.trading.api.ExchangeNetworkException;
@@ -112,7 +112,7 @@ import org.springframework.stereotype.Component;
  * <p>The algorithm relies on config from the sample {project-root}/config/strategies.yaml and
  * {project-root}/config/markets.yaml files. You can pass additional configItems to your Strategy
  * using the {project-root}/config/strategies.yaml file - you access it from the {@link
- * #init(TradingApi, Market, StrategyConfig)} method via the StrategyConfigImpl argument.
+ * #init(TradingApi, Market, IStrategyConfigItems)} method via the StrategyConfigImpl argument.
  *
  * <p>This simple demo algorithm only manages 1 order at a time to keep things simple.
  *
@@ -168,7 +168,7 @@ public class ExampleScalpingStrategy implements TradingStrategy {
    *     strategies.yaml file.
    */
   @Override
-  public void init(TradingApi tradingApi, Market market, StrategyConfig config) {
+  public void init(TradingApi tradingApi, Market market, IStrategyConfigItems config) {
     LOG.info(() -> "Initialising Trading Strategy...");
     this.tradingApi = tradingApi;
     this.market = market;
@@ -660,7 +660,7 @@ public class ExampleScalpingStrategy implements TradingStrategy {
    *
    * @param config the config for the Trading Strategy.
    */
-  private void getConfigForStrategy(StrategyConfig config) {
+  private void getConfigForStrategy(IStrategyConfigItems config) {
 
     // Get counter currency buy amount...
     final String counterCurrencyBuyOrderAmountFromConfigAsString =

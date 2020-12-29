@@ -28,7 +28,7 @@ import static org.easymock.EasyMock.expect;
 import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 
-import com.gazbert.bxbot.strategy.api.StrategyConfig;
+import com.gazbert.bxbot.strategy.api.IStrategyConfigItems;
 import com.gazbert.bxbot.strategy.api.StrategyException;
 import com.gazbert.bxbot.trading.api.ExchangeNetworkException;
 import com.gazbert.bxbot.trading.api.Market;
@@ -64,7 +64,7 @@ public class TestExampleScalpingStrategy {
 
   private TradingApi tradingApi;
   private Market market;
-  private StrategyConfig config;
+  private IStrategyConfigItems config;
 
   private MarketOrderBook marketOrderBook;
   private MarketOrder marketBuyOrder;
@@ -78,7 +78,7 @@ public class TestExampleScalpingStrategy {
   public void setUpBeforeEachTest() throws Exception {
     tradingApi = createMock(TradingApi.class);
     market = createMock(Market.class);
-    config = createMock(StrategyConfig.class);
+    config = createMock(IStrategyConfigItems.class);
 
     // setup market order book
     marketOrderBook = createMock(MarketOrderBook.class);

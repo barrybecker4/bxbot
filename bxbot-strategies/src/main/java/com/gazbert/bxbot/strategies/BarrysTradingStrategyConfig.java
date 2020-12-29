@@ -1,6 +1,6 @@
 package com.gazbert.bxbot.strategies;
 
-import com.gazbert.bxbot.strategy.api.StrategyConfig;
+import com.gazbert.bxbot.strategy.api.IStrategyConfigItems;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import org.apache.logging.log4j.LogManager;
@@ -10,6 +10,7 @@ public class BarrysTradingStrategyConfig {
 
   private static final Logger LOG = LogManager.getLogger();
 
+  private final String strategyId;
   /**
    * The counter currency amount to use when placing the buy order. This was loaded from the
    * strategy entry in the {project-root}/config/strategies.yaml config file.
@@ -21,6 +22,10 @@ public class BarrysTradingStrategyConfig {
    * entry in the {project-root}/config/strategies.yaml config file.
    */
   private final BigDecimal minimumPercentageGain;
+
+  public String getStrategyId() {
+    return strategyId;
+  }
 
   public BigDecimal getCounterCurrencyBuyOrderAmount() {
     return counterCurrencyBuyOrderAmount;
@@ -37,13 +42,15 @@ public class BarrysTradingStrategyConfig {
    *
    * @param config the config for the Trading Strategy.
    */
-  public BarrysTradingStrategyConfig(StrategyConfig config) {
+  public BarrysTradingStrategyConfig(IStrategyConfigItems config) {
 
+    strategyId = config.getStrategyId();
     counterCurrencyBuyOrderAmount = retrieveCounterCurrencyBuyOrderAmount(config);
     minimumPercentageGain = retrieveMinimumPercentageGainAmount(config);
   }
 
-  private BigDecimal retrieveCounterCurrencyBuyOrderAmount(StrategyConfig config) {
+
+  private BigDecimal retrieveCounterCurrencyBuyOrderAmount(IStrategyConfigItems config) {
     // Get counter currency buy amount...
     final String counterCurrencyBuyOrderAmountFromConfigAsString =
             config.getConfigItem("counter-currency-buy-order-amount");
@@ -60,7 +67,7 @@ public class BarrysTradingStrategyConfig {
     return new BigDecimal(counterCurrencyBuyOrderAmountFromConfigAsString);
   }
 
-  private BigDecimal retrieveMinimumPercentageGainAmount(StrategyConfig config) {
+  private BigDecimal retrieveMinimumPercentageGainAmount(IStrategyConfigItems config) {
 
     // Get min % gain...
     final String minimumPercentageGainFromConfigAsString =
