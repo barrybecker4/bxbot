@@ -174,7 +174,7 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
         LOG.info(() -> context.getMarketName()
                 + " ^^^ Yay!!! BUY Order Id [" + lastOrder.id + "] filled at ["
                 + lastOrder.price + "]");
-        persistTransaction(FILLED, lastOrder.amount, lastOrder.price);
+        persistTransaction(FILLED, lastOrder);
 
         /*
          * The last buy order was filled, so lets now a new sell order.
@@ -194,8 +194,8 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
         final BigDecimal newAskPrice =
                 lastOrder.price.add(amountToAdd).setScale(8, RoundingMode.HALF_UP);
 
-        lastOrder = context.sendSellOrder(lastOrder.amount, newAskPrice);
-        persistTransaction(SENT, lastOrder.amount, newAskPrice);
+        OrderState newOrder = context.sendSellOrder(lastOrder.amount, newAskPrice);
+        persistTransaction(SENT, newOrder);
       } else {
         logBuyNotFilledYet();
       }
@@ -222,8 +222,7 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
         LOG.info(() -> context.getMarketName()
                 + " ^^^ Yay!!! SELL Order Id [" + lastOrder.id + "] filled at ["
                 + lastOrder.price + "]");
-        persistTransaction(FILLED, lastOrder.amount, lastOrder.price);
-
+        persistTransaction(FILLED, lastOrder);
       } else {
         logSellOrderNotFilledYet(currentBidPrice);
       }
@@ -268,7 +267,7 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
       lastOrder = context.sendBuyOrder(amountOfBaseCurrencyToBuy, price);
       buyOrderStack.push(lastOrder);
 
-      persistTransaction(SENT, amountOfBaseCurrencyToBuy, price);
+      persistTransaction(SENT, lastOrder);
     } catch (ExchangeNetworkException e) {
       handleExchangeNetworkException("Attempt to BUY base currency failed", e);
     } catch (TradingApiException e) {
@@ -311,11 +310,10 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
             .collect(Collectors.joining(", "));
   }
 
-  private void persistTransaction(TransactionEntry.Status status,
-                                  BigDecimal amount, BigDecimal price) {
+  private void persistTransaction(TransactionEntry.Status status, OrderState order) {
     transactionRepo.save(
-            new TransactionEntry(lastOrder.id, lastOrder.type.getStringValue(), status,
-                    context.getMarketName(), amount, price,
+            new TransactionEntry(order.id, order.type.getStringValue(), status,
+                    context.getMarketName(), order.amount, order.price,
                     strategyConfig.getStrategyId(), context.getExchangeApi()));
   }
 
