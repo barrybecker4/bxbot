@@ -38,13 +38,11 @@ import com.gazbert.bxbot.trading.api.MarketOrder;
 import com.gazbert.bxbot.trading.api.MarketOrderBook;
 import com.gazbert.bxbot.trading.api.OrderType;
 import com.gazbert.bxbot.trading.api.TradingApi;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
-
 import org.junit.Before;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
