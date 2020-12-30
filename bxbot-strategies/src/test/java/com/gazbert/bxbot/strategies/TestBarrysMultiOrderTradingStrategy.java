@@ -135,17 +135,17 @@ public class TestBarrysMultiOrderTradingStrategy {
     expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
 
     final BigDecimal amountOfUnitsToBuy = new BigDecimal("0.01375499");
-    expect(context.getAmountOfBaseCurrencyToBuy(
+    expect(context.getAmountOfBaseCurrency(
             new BigDecimal(CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT)))
             .andReturn(amountOfUnitsToBuy);
 
     OrderState expBuyOrder =
-            new OrderState(ORDER_ID, OrderType.BUY, askSpotPrice, amountOfUnitsToBuy);
+            new OrderState(ORDER_ID, OrderType.BUY, bidSpotPrice, amountOfUnitsToBuy);
 
-    expect(context.sendBuyOrder(amountOfUnitsToBuy, askSpotPrice)).andReturn(expBuyOrder);
+    expect(context.sendBuyOrder(amountOfUnitsToBuy, bidSpotPrice)).andReturn(expBuyOrder);
 
     TransactionEntry expEntry = new TransactionEntry(ORDER_ID, OrderType.BUY.getStringValue(), SENT,
-            MARKET_NAME, amountOfUnitsToBuy, askSpotPrice, strategy, exchangeApi);
+            MARKET_NAME, amountOfUnitsToBuy, bidSpotPrice, strategy, exchangeApi);
 
     expect(transactionRepo.save(expEntry)).andReturn(expEntry);
 
@@ -170,12 +170,18 @@ public class TestBarrysMultiOrderTradingStrategy {
   public void testStrategySendsNewSellOrderWhenBuyOrderFilled() throws Exception {
 
     expect(context.isOrderOpen(ORDER_ID)).andReturn(false);
+    expect(context.getBaseCurrencyBalance()).andReturn(new BigDecimal("2.1"));
 
     // expect to get current bid and ask spot prices
     final BigDecimal bidSpotPrice = new BigDecimal("1453.014");
     expect(marketBuyOrders.get(0).getPrice()).andReturn(bidSpotPrice);
     final BigDecimal askSpotPrice = new BigDecimal("1455.016");
     expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
+
+    final BigDecimal amountOfUnitsToBuy = new BigDecimal("0.333123");
+    expect(context.getAmountOfBaseCurrency(
+            new BigDecimal(CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT)))
+            .andReturn(amountOfUnitsToBuy);
 
     // mock the buy order state that was filled
     final BigDecimal lastOrderAmount = new BigDecimal("35");
@@ -214,6 +220,7 @@ public class TestBarrysMultiOrderTradingStrategy {
     buyOrderStack.push(orderState);
     Whitebox.setInternalState(strategy, "buyOrderStack", buyOrderStack);
     Whitebox.setInternalState(strategy, "lastOrder", orderState);
+    Whitebox.setInternalState(strategy, "latestHighPrice", new BigDecimal("30000"));
 
     strategy.init(context, config, transactionRepo);
     strategy.execute();

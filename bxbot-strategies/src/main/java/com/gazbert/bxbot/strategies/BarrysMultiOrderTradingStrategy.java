@@ -37,10 +37,12 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
 
   private static final Logger LOG = LogManager.getLogger();
   private static final BigDecimal ONE = new BigDecimal("1");
+  private static final BigDecimal TWO = new BigDecimal("2");
 
   private TradingContext context;
   private BarrysMultiOrderTradingStrategyConfig strategyConfig;
   private OrderState lastOrder;
+  private BigDecimal latestHighPrice;
 
   private final Stack<OrderState> buyOrderStack = new Stack<>();
   private final Stack<OrderState> sellOrderStack = new Stack<>();
@@ -110,7 +112,8 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
     logPrices(currentBidPrice, currentAskPrice);
 
     if (lastOrder == null) {
-      sendInitialBuyOrder(currentAskPrice);
+      latestHighPrice = currentAskPrice;
+      sendInitialBuyOrder(currentBidPrice);
       return;
     }
 
@@ -121,6 +124,7 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
       checkForFilledSellOrder(currentBidPrice);
     }
     sendBuyOrderIfSufficientlyLow(currentBidPrice);
+    sendSellOrderIfReachingNewHigh(currentAskPrice);
   }
 
   private boolean hasOrders(String type, List<MarketOrder> orders) {
@@ -142,15 +146,15 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
    * Send buy order at the current strike price. Push that buy order onto a buyOrderStack.
    * (It should fill quickly, but might get stuck if price goes up quickly)
    *
-   * @param currentAskPrice the current market ASK price. Use the ask price to increase
-   *                        the likelihood that it goes through.
+   * @param currentPrice the current market price.
+   *                     Use the BID price to hopefully get a better deal.
    */
-  private void sendInitialBuyOrder(BigDecimal currentAskPrice)
+  private void sendInitialBuyOrder(BigDecimal currentPrice)
       throws StrategyException {
     LOG.info(() -> context.getMarketName()
                 + "Just starting - placing new BUY order at ["
-                + PriceUtil.formatPrice(currentAskPrice) + "]");
-    sendBuyOrder(currentAskPrice);
+                + PriceUtil.formatPrice(currentPrice) + "]");
+    sendBuyOrder(currentPrice);
   }
 
   /**
@@ -192,8 +196,8 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
         final BigDecimal newAskPrice =
                 lastOrder.price.add(amountToAdd).setScale(8, RoundingMode.HALF_UP);
 
-        OrderState newOrder = context.sendSellOrder(lastOrder.amount, newAskPrice);
-        persistTransaction(SENT, newOrder);
+        // sendSellOrder
+        sendSellOrder(lastOrder.amount, newAskPrice);
       } else {
         logBuyNotFilledYet();
       }
@@ -255,11 +259,44 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
     }
   }
 
+  /**
+   * if (currentPrice > highPrice * ( 1 + percent-change-threshold)
+   * and have enough base currency balance (i.e BTC) {
+   *    Send sell order at the current ask price. Push that sell order onto the sellOrderStack.
+   *    set highPrice to currentPrice
+   * }
+   *
+   * @param currentAskPrice current ask price.
+   * @throws StrategyException if something goes awry
+   */
+  private void sendSellOrderIfReachingNewHigh(BigDecimal currentAskPrice)
+          throws TradingApiException, ExchangeNetworkException {
+
+    BigDecimal percentThresh = strategyConfig.getPercentChangeThreshold();
+    boolean aboveThresh =
+            currentAskPrice.compareTo(latestHighPrice.multiply(ONE.add(percentThresh))) > 0;
+
+    final BigDecimal amountOfBaseCurrencyToSell =
+            context.getAmountOfBaseCurrency(
+                    strategyConfig.getCounterCurrencyBuyOrderAmount());
+
+
+    BigDecimal minimumNeeded = amountOfBaseCurrencyToSell.multiply(TWO);
+    boolean fundsAvailable =
+            context.getBaseCurrencyBalance().compareTo(minimumNeeded) > 0;
+
+    if (aboveThresh && fundsAvailable) {
+      LOG.info(() -> context.getMarketName()
+              + "Placing new SELL order at ["
+              + PriceUtil.formatPrice(currentAskPrice) + "]");
+      sendSellOrder(amountOfBaseCurrencyToSell, currentAskPrice);
+    }
+  }
+
   private void sendBuyOrder(BigDecimal price) throws StrategyException {
     try {
-      // Calculate amount of base currency (BTC) to buy for given amount of counter currency (USD).
       final BigDecimal amountOfBaseCurrencyToBuy =
-              context.getAmountOfBaseCurrencyToBuy(
+              context.getAmountOfBaseCurrency(
                       strategyConfig.getCounterCurrencyBuyOrderAmount());
 
       lastOrder = context.sendBuyOrder(amountOfBaseCurrencyToBuy, price);
@@ -271,6 +308,14 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
     } catch (TradingApiException e) {
       handleTradingApiException("Attempt to BUY base currency failed", e);
     }
+  }
+
+  private void sendSellOrder(BigDecimal amountToSell, BigDecimal askPrice)
+          throws TradingApiException, ExchangeNetworkException {
+
+    OrderState newOrder =
+            context.sendSellOrder(amountToSell, askPrice);
+    persistTransaction(SENT, newOrder);
   }
 
   /*

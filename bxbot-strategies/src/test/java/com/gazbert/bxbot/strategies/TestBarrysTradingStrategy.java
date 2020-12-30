@@ -137,7 +137,7 @@ public class TestBarrysTradingStrategy {
     final BigDecimal lastTradePrice = new BigDecimal("1453.014"); //("1454.018");
 
     final BigDecimal amountOfUnitsToBuy = new BigDecimal("0.01375499");
-    expect(context.getAmountOfBaseCurrencyToBuy(
+    expect(context.getAmountOfBaseCurrency(
             new BigDecimal(CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT)))
             .andReturn(amountOfUnitsToBuy);
 
@@ -293,7 +293,7 @@ public class TestBarrysTradingStrategy {
     expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
 
     final BigDecimal amountOfUnitsToBuy = new BigDecimal("1333.33333333");
-    expect(context.getAmountOfBaseCurrencyToBuy(
+    expect(context.getAmountOfBaseCurrency(
             new BigDecimal(CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT)))
             .andReturn(amountOfUnitsToBuy);
 
@@ -379,7 +379,7 @@ public class TestBarrysTradingStrategy {
 
     // expect to send initial buy order to exchange and receive timeout exception
     final BigDecimal amountOfUnitsToBuy = new BigDecimal("0.01375499");
-    expect(context.getAmountOfBaseCurrencyToBuy(
+    expect(context.getAmountOfBaseCurrency(
             new BigDecimal(CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT)))
             .andReturn(amountOfUnitsToBuy);
 
@@ -424,7 +424,7 @@ public class TestBarrysTradingStrategy {
 
     // expect to send new buy order to exchange and receive timeout exception
     final BigDecimal amountOfUnitsToBuy = new BigDecimal("1333.33333333");
-    expect(context.getAmountOfBaseCurrencyToBuy(
+    expect(context.getAmountOfBaseCurrency(
             new BigDecimal(CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT)))
             .andReturn(amountOfUnitsToBuy);
 
@@ -515,7 +515,7 @@ public class TestBarrysTradingStrategy {
     expect(marketSellOrders.get(0).getPrice()).andReturn(askSpotPrice);
 
     final BigDecimal amountOfUnitsToBuy = new BigDecimal("0.01375499");
-    expect(context.getAmountOfBaseCurrencyToBuy(
+    expect(context.getAmountOfBaseCurrency(
             new BigDecimal(CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT)))
             .andReturn(amountOfUnitsToBuy);
 
@@ -557,7 +557,7 @@ public class TestBarrysTradingStrategy {
 
     // expect to send new buy order to exchange and receive timeout exception
     final BigDecimal amountOfUnitsToBuy = new BigDecimal("1333.33333333");
-    expect(context.getAmountOfBaseCurrencyToBuy(
+    expect(context.getAmountOfBaseCurrency(
             new BigDecimal(CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT)))
             .andReturn(amountOfUnitsToBuy);
 
@@ -609,7 +609,7 @@ public class TestBarrysTradingStrategy {
     final BigDecimal requiredProfitInPercent = new BigDecimal("0.02");
 
     final BigDecimal amountOfUnitsToBuy = new BigDecimal("0.01375499");
-    expect(context.getAmountOfBaseCurrencyToBuy(
+    expect(context.getAmountOfBaseCurrency(
             new BigDecimal(CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT)))
             .andReturn(amountOfUnitsToBuy);
 

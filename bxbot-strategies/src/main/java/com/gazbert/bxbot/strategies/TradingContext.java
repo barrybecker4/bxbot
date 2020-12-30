@@ -10,6 +10,7 @@ import com.gazbert.bxbot.trading.api.TradingApiException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -47,6 +48,17 @@ public class TradingContext {
 
   public List<MarketOrder> getSellOrders() throws TradingApiException, ExchangeNetworkException {
     return tradingApi.getMarketOrders(market.getId()).getSellOrders();
+  }
+
+  /**
+   * amount of base currency available to trade.
+   *
+   * @return amount of base currency available to trade.
+   */
+  public BigDecimal getBaseCurrencyBalance() throws TradingApiException, ExchangeNetworkException {
+    final Map<String, BigDecimal> balancesAvailable =
+            tradingApi.getBalanceInfo().getBalancesAvailable();
+    return balancesAvailable.get(getBaseCurrency());
   }
 
   /**
@@ -105,18 +117,17 @@ public class TradingContext {
   }
 
   /**
-   * Returns amount of base currency (e.g. BTC) to buy for a given amount of
-   * counter currency (e.g. USD) based on last market trade price.
+   * Returns amount of base currency (e.g. BTC) corresponding to an amount of
+   * counter currency (e.g. USD).
    *
-   * @param amountOfCounterCurrencyToTrade the amount of counter currency (e.g. USD)
+   * @param amountOfCounterCurrency the amount of counter currency (e.g. USD)
    *      we have to trade (buy) with.
-   * @return the amount of base currency (e.g. BTC) we can buy for the given
-   *     counter currency (e.g. USD) amount.
+   * @return the amount of base currency (e.g. BTC) given counter currency (e.g. USD) amount.
    * @throws TradingApiException if an unexpected error occurred contacting the exchange.
    * @throws ExchangeNetworkException if a request to the exchange has timed out.
    */
-  public BigDecimal getAmountOfBaseCurrencyToBuy(
-          BigDecimal amountOfCounterCurrencyToTrade)
+  public BigDecimal getAmountOfBaseCurrency(
+          BigDecimal amountOfCounterCurrency)
           throws TradingApiException, ExchangeNetworkException {
 
     // Fetch the last trade price
@@ -127,17 +138,15 @@ public class TradingContext {
             + PriceUtil.formatPrice(lastTradePriceInUsdForOneBtc) + " "
             + market.getCounterCurrency());
 
-    /*
-     * Most exchanges (if not all) use 8 decimal places and typically round in favour of the
-     * exchange. It's usually safest to round down the order quantity in your calculations.
-     */
+    // Most exchanges (if not all) use 8 decimal places and typically round in favour of the
+    //exchange. It's usually safest to round down the order quantity in your calculations.
     final BigDecimal amountOfBaseCurrencyToBuy =
-            amountOfCounterCurrencyToTrade.divide(
+            amountOfCounterCurrency.divide(
                     lastTradePriceInUsdForOneBtc, 8, RoundingMode.HALF_DOWN);
 
     LOG.info(() -> market.getName()
-            + " Amount of base currency (" + market.getBaseCurrency() + ") to BUY for "
-            + PriceUtil.formatPrice(amountOfCounterCurrencyToTrade) + " "
+            + " Amount of base currency (" + market.getBaseCurrency() + ") corresponding to "
+            + PriceUtil.formatPrice(amountOfCounterCurrency) + " "
             + market.getCounterCurrency() + " based on last market trade price: "
             + amountOfBaseCurrencyToBuy);
 

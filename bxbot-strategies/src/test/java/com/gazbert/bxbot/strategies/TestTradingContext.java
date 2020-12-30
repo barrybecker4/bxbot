@@ -203,7 +203,7 @@ public class TestTradingContext {
     BigDecimal expCurrencyToBuy = new BigDecimal("0.08100052");
     assertEquals(
             expCurrencyToBuy,
-            context.getAmountOfBaseCurrencyToBuy(new BigDecimal("100.0"))
+            context.getAmountOfBaseCurrency(new BigDecimal("100.0"))
     );
 
     verify(market, tradingApi, config, marketOrderBook, marketBuyOrder, marketSellOrder);
