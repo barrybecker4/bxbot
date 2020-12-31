@@ -277,19 +277,18 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
             currentAskPrice.compareTo(latestHighPrice.multiply(ONE.add(percentThresh))) > 0;
 
     final BigDecimal amountOfBaseCurrencyToSell =
-            context.getAmountOfBaseCurrency(
-                    strategyConfig.getCounterCurrencyBuyOrderAmount());
-
+            context.getAmountOfBaseCurrency(strategyConfig.getCounterCurrencyBuyOrderAmount());
 
     BigDecimal minimumNeeded = amountOfBaseCurrencyToSell.multiply(TWO);
     boolean fundsAvailable =
             context.getBaseCurrencyBalance().compareTo(minimumNeeded) > 0;
 
     if (aboveThresh && fundsAvailable) {
+      latestHighPrice = currentAskPrice;
       LOG.info(() -> context.getMarketName()
               + "Placing new SELL order at ["
               + PriceUtil.formatPrice(currentAskPrice) + "]");
-      sendSellOrder(amountOfBaseCurrencyToSell, currentAskPrice);
+      lastOrder = sendSellOrder(amountOfBaseCurrencyToSell, currentAskPrice);
     }
   }
 
@@ -310,12 +309,13 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
     }
   }
 
-  private void sendSellOrder(BigDecimal amountToSell, BigDecimal askPrice)
+  private OrderState sendSellOrder(BigDecimal amountToSell, BigDecimal askPrice)
           throws TradingApiException, ExchangeNetworkException {
 
     OrderState newOrder =
             context.sendSellOrder(amountToSell, askPrice);
     persistTransaction(SENT, newOrder);
+    return newOrder;
   }
 
   /*

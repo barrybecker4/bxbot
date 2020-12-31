@@ -62,7 +62,7 @@ public class TestBarrysMultiOrderTradingStrategy {
   private static final String CONFIG_ITEM_PERCENT_CHANGE_THRESHOLD = "4";
   private static final String ORDER_ID = "45345346";
 
-  private static final String strategy = "Barry's multi-order strategy";
+  private static final String strategyName = "Barry's multi-order strategy";
   private static final String exchangeApi = "Bitstamp API";
 
   private TradingContext context;
@@ -95,7 +95,7 @@ public class TestBarrysMultiOrderTradingStrategy {
     marketSellOrders.add(marketSellOrder);
 
     // expect config to be loaded
-    expect(config.getStrategyId()).andReturn(strategy).anyTimes();
+    expect(config.getStrategyId()).andReturn(strategyName).anyTimes();
     expect(config.getConfigItem("max-concurrent-sell-orders"))
         .andReturn(MAX_CONCURRENT_SELL_ORDERS);
     expect(config.getConfigItem("counter-currency-buy-order-amount"))
@@ -145,7 +145,7 @@ public class TestBarrysMultiOrderTradingStrategy {
     expect(context.sendBuyOrder(amountOfUnitsToBuy, bidSpotPrice)).andReturn(expBuyOrder);
 
     TransactionEntry expEntry = new TransactionEntry(ORDER_ID, OrderType.BUY.getStringValue(), SENT,
-            MARKET_NAME, amountOfUnitsToBuy, bidSpotPrice, strategy, exchangeApi);
+            MARKET_NAME, amountOfUnitsToBuy, bidSpotPrice, strategyName, exchangeApi);
 
     expect(transactionRepo.save(expEntry)).andReturn(expEntry);
 
@@ -191,7 +191,7 @@ public class TestBarrysMultiOrderTradingStrategy {
 
     TransactionEntry buyEntry = new TransactionEntry(
             ORDER_ID, OrderType.BUY.getStringValue(), FILLED,
-            MARKET_NAME, lastOrderAmount, lastOrderPrice, strategy, exchangeApi);
+            MARKET_NAME, lastOrderAmount, lastOrderPrice, strategyName, exchangeApi);
     expect(transactionRepo.save(buyEntry)).andReturn(buyEntry);
 
     // expect to send new sell order to exchange
@@ -208,7 +208,7 @@ public class TestBarrysMultiOrderTradingStrategy {
 
     TransactionEntry sellEntry = new TransactionEntry(
             ORDER_ID, OrderType.SELL.getStringValue(), SENT,
-            MARKET_NAME, lastOrderAmount, newAskPrice, strategy, exchangeApi);
+            MARKET_NAME, lastOrderAmount, newAskPrice, strategyName, exchangeApi);
     expect(transactionRepo.save(sellEntry)).andReturn(sellEntry);
 
     replay(context, config, transactionRepo, marketBuyOrder, marketSellOrder);
