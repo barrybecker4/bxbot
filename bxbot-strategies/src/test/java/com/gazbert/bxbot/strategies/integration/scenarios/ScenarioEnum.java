@@ -65,6 +65,9 @@ public enum ScenarioEnum implements Scenario {
   EXPONENTIAL_INCREASING_WITH_CRASHES("exponentiallyIncreaseWithCrashes",
           new ExponentialSeriesGenerator(25000, 0.04, 0.09,
                   4, 0.9)) {
+  },
+
+  HISTORICAL_DATA("historicalDataLastHalf2020", new RealDataGenerator(25000)) {
   };
 
   private static final int NUM_POINTS = 200;

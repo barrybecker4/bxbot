@@ -9,6 +9,7 @@ import com.gazbert.bxbot.trading.api.TradingApi;
 import com.gazbert.bxbot.trading.api.TradingApiException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -17,11 +18,13 @@ public class SimulatedTradingApi implements TradingApi {
 
   private final String name;
   private final double[] seriesData;
-  private int counter = 0;
   private int index = 0;
   private long orderId = 0L;
   private List<OpenOrder> openOrders;
   private final BalanceInfo balanceInfo;
+
+  private static String BTC = "BTC";
+  private static String USD = "USD";
 
   // Start with $1000 - half in USD and half in BTC.
   // 500USD / 25000 USD/BTC = 0.02
@@ -44,10 +47,10 @@ public class SimulatedTradingApi implements TradingApi {
     this.seriesData = seriesData;
     this.openOrders = new ArrayList<>();
 
-    Map<String, BigDecimal> availableBalances = Map.of(
-            "BTC", BigDecimal.valueOf(initialUsd),
-            "USD", BigDecimal.valueOf(initialBtc)
-    );
+    Map<String, BigDecimal> availableBalances = new HashMap<>();
+    availableBalances.put(BTC, BigDecimal.valueOf(initialUsd));
+    availableBalances.put(USD, BigDecimal.valueOf(initialBtc));
+
     balanceInfo = new StubBalanceInfo(availableBalances);
   }
 
@@ -60,18 +63,64 @@ public class SimulatedTradingApi implements TradingApi {
     return seriesData.length;
   }
 
+  /**
+   * Advance to nex series dat point.
+   * Close any open orders where the current threshold has based the order bid/ask
+   * Then remove that order from the list.
+   */
+  public void advanceToNextTradingCyle() {
+
+    double newPrice = seriesData[index];
+    index++;
+
+    openOrders = openOrders.stream()
+            .filter(order -> {
+              boolean keep;
+              if (order.getType() == OrderType.BUY) {
+                keep = order.getPrice().doubleValue() > newPrice;
+              } else { // SELL
+                keep = order.getPrice().doubleValue() < newPrice;
+              }
+              if (!keep) {
+                updateBalancesForExecutedOrder(order);
+              }
+              return keep;
+            })
+            .collect(Collectors.toList());
+  }
+
+  private void updateBalancesForExecutedOrder(OpenOrder order) {
+    Map<String, BigDecimal> availableBalances = balanceInfo.getBalancesAvailable();
+    if (order.getType() == OrderType.BUY) {
+      // buying BTC, adjust the balances
+      BigDecimal newBtcBalance =
+              availableBalances.get(BTC).add(order.getQuantity());
+      availableBalances.put(BTC, newBtcBalance);
+      BigDecimal newUsdBalance =
+              availableBalances.get(USD).subtract(order.getQuantity().multiply(order.getPrice()));
+      availableBalances.put(USD, newUsdBalance);
+    } else {
+      // selling BTC, adjust the balances
+      BigDecimal newBtcBalance =
+              availableBalances.get(BTC).subtract(order.getQuantity());
+      availableBalances.put(BTC, newBtcBalance);
+      BigDecimal newUsdBalance =
+              availableBalances.get(USD).add(order.getQuantity().multiply(order.getPrice()));
+      availableBalances.put(USD, newUsdBalance);
+    }
+  }
+
   @Override
   public MarketOrderBook getMarketOrders(String marketId)
           throws ExchangeNetworkException, TradingApiException {
 
-    index = counter / 2; // this method is called twice each trading cycle
     if (index >= seriesData.length) {
       throw new IllegalStateException("index " + index + " exceeded size of seriesData");
     }
-    counter++;
     // call with new price from time series each time
     return new StubMarketOrderBook(marketId, seriesData[index]);
   }
+
 
   @Override
   public List<OpenOrder> getYourOpenOrders(String marketId) {

@@ -32,18 +32,20 @@ public class ScenarioTestBarrysMultiOrderTradingStrategy {
   @Test
   public void randomWalkTest() throws Exception {
 
-    Map<Scenario, Double> expResults = Map.of(
-            ScenarioEnum.LINEAR_INCREASING, 1232.9994577249772,
-            ScenarioEnum.VOLATILE_INCREASING, 1588.744577249768,
-            ScenarioEnum.EXPONENTIAL_INCREASING, 2878.638434118917,
-            ScenarioEnum.FLAT, 1067.9989154499538,
-            ScenarioEnum.RANDOM_WALK, 1679.9891544995364,
-            ScenarioEnum.EXPONENTIAL_DECREASING, 508.031577171763,
-            ScenarioEnum.VOLATILE_DECREASING, 1140.9945772497686,
-            ScenarioEnum.LINEAR_DECREASING, 834.9994577249765,
-            ScenarioEnum.EXPONENTIAL_INCREASE_WITH_CRASH, 558.263138875568,
-            ScenarioEnum.EXPONENTIAL_INCREASING_WITH_CRASHES, 1509.5463802500572
-    );
+
+    Map<Scenario, Double> expResults = new LinkedHashMap<>();
+    expResults.put(ScenarioEnum.LINEAR_INCREASING, 1152.8866722375658);
+    expResults.put(ScenarioEnum.VOLATILE_INCREASING, 1552.0820023504614);
+    expResults.put(ScenarioEnum.EXPONENTIAL_INCREASING, 2741.8802282879005);
+    expResults.put(ScenarioEnum.FLAT, 1069.998715585135);
+    expResults.put(ScenarioEnum.RANDOM_WALK, 1679.9891544995364);
+    expResults.put(ScenarioEnum.EXPONENTIAL_DECREASING, 644.770856855927);
+    expResults.put(ScenarioEnum.VOLATILE_DECREASING, 1140.9945772497686);
+    expResults.put(ScenarioEnum.LINEAR_DECREASING, 834.9994577249765);
+    expResults.put(ScenarioEnum.EXPONENTIAL_INCREASE_WITH_CRASH, 659.970662817741);
+    expResults.put(ScenarioEnum.EXPONENTIAL_INCREASING_WITH_CRASHES, 1509.5463802500572);
+    expResults.put(ScenarioEnum.HISTORICAL_DATA, 1047.20179688);
+
 
     verifySimulationResults(expResults);
   }
@@ -81,7 +83,8 @@ public class ScenarioTestBarrysMultiOrderTradingStrategy {
 
     strategy.init(context, config, transactionRepo);
 
-    for (int i = 0; i < tradingApi.getNumSimulatedCycles(); i++) {
+    for (int i = 0; i < tradingApi.getNumSimulatedCycles() - 1; i++) {
+      tradingApi.advanceToNextTradingCyle();
       strategy.execute();
     }
 
@@ -95,6 +98,7 @@ public class ScenarioTestBarrysMultiOrderTradingStrategy {
 
     double dollars = balances.get("USD").doubleValue();
     double btcValue = balances.get("BTC").doubleValue() * latestPrice;
+    System.out.println("amount of $="+ dollars + " amount of btc = " + btcValue);
     return dollars + btcValue;
   }
 }
