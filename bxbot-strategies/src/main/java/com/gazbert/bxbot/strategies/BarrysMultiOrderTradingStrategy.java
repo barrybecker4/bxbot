@@ -191,10 +191,12 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
         LOG.info(() -> context.getMarketName()
                 + " Amount to add to last buy order fill price: " + amountToAdd);
 
-        // Most exchanges (if not all) use 8 decimal places.
+
+        // Most exchanges use 8 decimal places, but Kraken uses 1.
         // It's usually best to round up the ASK price in your calculations to maximise gains.
+        int decimals = context.getExchangeApi().contains("Kraken") ? 1 : 8;
         final BigDecimal newAskPrice =
-                lastOrder.price.add(amountToAdd).setScale(8, RoundingMode.HALF_UP);
+                lastOrder.price.add(amountToAdd).setScale(decimals, RoundingMode.HALF_UP);
 
         // sendSellOrder
         sendSellOrder(lastOrder.amount, newAskPrice);

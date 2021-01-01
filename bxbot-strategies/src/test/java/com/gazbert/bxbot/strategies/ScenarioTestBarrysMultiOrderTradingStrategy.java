@@ -21,6 +21,9 @@ import org.junit.Test;
 
 /**
  * Tests the performance of the multi-order Scalping Strategy.
+ * Should try comparing to other strategies like
+ *  - buy and hold
+ *  - Bill's rebalancing strategy
  */
 public class ScenarioTestBarrysMultiOrderTradingStrategy {
 
@@ -98,7 +101,7 @@ public class ScenarioTestBarrysMultiOrderTradingStrategy {
 
     double dollars = balances.get("USD").doubleValue();
     double btcValue = balances.get("BTC").doubleValue() * latestPrice;
-    System.out.println("amount of $="+ dollars + " amount of btc = " + btcValue);
+    //System.out.println("amount of $=" + dollars + " amount of btc = " + btcValue);
     return dollars + btcValue;
   }
 }
