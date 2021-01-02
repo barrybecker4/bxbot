@@ -24,7 +24,7 @@
 package com.gazbert.bxbot.datastore.yaml.exchange;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.gazbert.bxbot.datastore.yaml.ConfigurationManager;
 import com.gazbert.bxbot.domain.exchange.ExchangeConfig;
@@ -35,7 +35,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 
 /**
  * Tests the Exchange Adapter configuration is loaded as expected.
@@ -117,13 +119,17 @@ public class TestExchangeConfigurationManagement {
         .isEqualTo(SELL_FEE_CONFIG_ITEM_VALUE);
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testLoadingMissingYamlConfigFileThrowsException() {
+    Assertions.assertThrows(IllegalStateException.class, () -> {
+    });
     ConfigurationManager.loadConfig(ExchangeType.class, MISSING_XML_CONFIG_FILENAME);
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testLoadingInvalidYamlConfigFileThrowsException() {
+    Assertions.assertThrows(IllegalArgumentException.class, () -> {
+    });
     ConfigurationManager.loadConfig(ExchangeType.class, INVALID_YAML_CONFIG_FILENAME);
   }
 
@@ -192,8 +198,10 @@ public class TestExchangeConfigurationManagement {
     Files.delete(FileSystems.getDefault().getPath(YAML_CONFIG_TO_SAVE_FILENAME));
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testSavingConfigToInvalidYamlFileIsHandled() {
+    Assertions.assertThrows(IllegalStateException.class, () -> {
+    });
     final Map<String, String> authenticationConfig = new HashMap<>();
     authenticationConfig.put(API_KEY_CONFIG_ITEM_KEY, API_KEY_CONFIG_ITEM_VALUE);
     authenticationConfig.put(SECRET_CONFIG_ITEM_KEY, SECRET_CONFIG_ITEM_VALUE);

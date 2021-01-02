@@ -24,8 +24,8 @@
 package com.gazbert.bxbot.datastore.yaml.strategy;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.gazbert.bxbot.datastore.yaml.ConfigurationManager;
 import com.gazbert.bxbot.domain.strategy.StrategyConfig;
@@ -33,7 +33,9 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 
 /**
  * Tests the Strategy configuration is loaded as expected.
@@ -139,13 +141,17 @@ public class TestStrategyConfigurationManagement {
         strategyConfig.getStrategies().get(2).getConfigItems()); // optional element check
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testLoadingMissingYamlConfigFileThrowsException() {
+    Assertions.assertThrows(IllegalStateException.class, () -> {
+    });
     ConfigurationManager.loadConfig(StrategiesType.class, MISSING_YAML_CONFIG_FILENAME);
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testLoadingInvalidYamlConfigFileThrowsException() {
+    Assertions.assertThrows(IllegalArgumentException.class, () -> {
+    });
     ConfigurationManager.loadConfig(StrategiesType.class, INVALID_YAML_CONFIG_FILENAME);
   }
 
@@ -238,8 +244,11 @@ public class TestStrategyConfigurationManagement {
     Files.delete(FileSystems.getDefault().getPath(YAML_CONFIG_TO_SAVE_FILENAME));
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testSavingConfigToInvalidYamlFileIsHandled() {
+    Assertions.assertThrows(IllegalStateException.class, () -> {
+    });
+
     // Strat 1
     final StrategyConfig strategy1 = new StrategyConfig();
     strategy1.setId(STRAT_ID_1);

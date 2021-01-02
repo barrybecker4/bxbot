@@ -30,9 +30,9 @@ import static org.easymock.EasyMock.verify;
 
 import com.gazbert.bxbot.domain.exchange.ExchangeConfig;
 import com.gazbert.bxbot.repository.ExchangeConfigRepository;
-import com.gazbert.bxbot.services.config.impl.ExchangeConfigServiceImpl;
 import org.easymock.EasyMock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
 
 /**
  * Tests Exchange configuration service behaves as expected.

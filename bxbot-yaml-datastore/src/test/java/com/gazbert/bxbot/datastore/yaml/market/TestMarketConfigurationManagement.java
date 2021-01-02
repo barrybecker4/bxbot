@@ -24,15 +24,16 @@
 package com.gazbert.bxbot.datastore.yaml.market;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.gazbert.bxbot.datastore.yaml.ConfigurationManager;
 import com.gazbert.bxbot.domain.market.MarketConfig;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests the Market configuration is loaded as expected.
@@ -88,13 +89,17 @@ public class TestMarketConfigurationManagement {
     assertEquals("scalping-strategy", marketsType.getMarkets().get(1).getTradingStrategyId());
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testLoadingMissingYamlConfigFileThrowsException() {
+    Assertions.assertThrows(IllegalStateException.class, () -> {
+    });
     ConfigurationManager.loadConfig(MarketsType.class, MISSING_YAML_CONFIG_FILENAME);
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testLoadingInvalidYamlConfigFileThrowsException() {
+    Assertions.assertThrows(IllegalArgumentException.class, () -> {
+    });
     ConfigurationManager.loadConfig(MarketsType.class, INVALID_YAML_CONFIG_FILENAME);
   }
 
@@ -150,8 +155,10 @@ public class TestMarketConfigurationManagement {
     Files.delete(FileSystems.getDefault().getPath(YAML_CONFIG_TO_SAVE_FILENAME));
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testSavingConfigToInvalidYamlFileIsHandled() {
+    Assertions.assertThrows(IllegalStateException.class, () -> {
+    });
     final MarketConfig market1 = new MarketConfig();
     market1.setEnabled(MARKET_1_IS_ENABLED);
     market1.setId(MARKET_1_ID);

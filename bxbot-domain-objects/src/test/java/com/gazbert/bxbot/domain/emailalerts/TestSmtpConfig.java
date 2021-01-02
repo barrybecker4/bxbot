@@ -23,10 +23,10 @@
 
 package com.gazbert.bxbot.domain.emailalerts;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests a SmtpConfig domain object behaves as expected.

@@ -23,17 +23,18 @@
 
 package com.gazbert.bxbot.datastore.yaml.emailalerts;
 
-import static junit.framework.TestCase.assertEquals;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.gazbert.bxbot.datastore.yaml.ConfigurationManager;
 import com.gazbert.bxbot.domain.emailalerts.EmailAlertsConfig;
 import com.gazbert.bxbot.domain.emailalerts.SmtpConfig;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests the Email Alerts configuration is loaded as expected.
@@ -86,13 +87,17 @@ public class TestEmailAlertsConfigurationManagement {
     assertFalse(emailAlertsType.getEmailAlerts().isEnabled());
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testLoadingMissingYamlConfigThrowsException() {
+    Assertions.assertThrows(IllegalStateException.class, () -> {
+    });
     ConfigurationManager.loadConfig(EmailAlertsType.class, MISSING_YAML_CONFIG_FILENAME);
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testLoadingInvalidYamlConfigFileThrowsException() {
+    Assertions.assertThrows(IllegalArgumentException.class, () -> {
+    });
     ConfigurationManager.loadConfig(EmailAlertsType.class, INVALID_YAML_CONFIG_FILENAME);
   }
 
@@ -137,8 +142,10 @@ public class TestEmailAlertsConfigurationManagement {
     Files.delete(FileSystems.getDefault().getPath(YAML_CONFIG_TO_SAVE_FILENAME));
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testSavingConfigToInvalidYamlFileIsHandled() {
+    Assertions.assertThrows(IllegalStateException.class, () -> {
+    });
     final SmtpConfig smtpConfig = new SmtpConfig();
     smtpConfig.setAccountUsername(ACCOUNT_USERNAME);
     smtpConfig.setAccountPassword(ACCOUNT_PASSWORD);

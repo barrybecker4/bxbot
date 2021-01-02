@@ -23,14 +23,16 @@
 
 package com.gazbert.bxbot.datastore.yaml.engine;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.gazbert.bxbot.datastore.yaml.ConfigurationManager;
 import com.gazbert.bxbot.domain.engine.EngineConfig;
 import java.math.BigDecimal;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+
 
 /**
  * Tests the Trading Engine configuration is loaded as expected.
@@ -68,13 +70,17 @@ public class TestEngineConfigurationManagement {
     assertEquals(TRADE_CYCLE_INTERVAL, engineType.getEngine().getTradeCycleInterval());
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testLoadingMissingYamlConfigThrowsException() {
+    Assertions.assertThrows(IllegalStateException.class, () -> {
+    });
     ConfigurationManager.loadConfig(EngineType.class, MISSING_YAML_CONFIG_FILENAME);
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void testLoadingInvalidYamlConfigThrowsException() {
+    Assertions.assertThrows(IllegalArgumentException.class, () -> {
+    });
     ConfigurationManager.loadConfig(EngineType.class, INVALID_YAML_CONFIG_FILENAME);
   }
 
@@ -109,8 +115,10 @@ public class TestEngineConfigurationManagement {
     Files.delete(FileSystems.getDefault().getPath(YAML_CONFIG_TO_SAVE_FILENAME));
   }
 
-  @Test(expected = IllegalStateException.class)
+  @Test
   public void testSavingConfigToInvalidYamlFileIsHandled() {
+    Assertions.assertThrows(IllegalStateException.class, () -> {
+    });
     final EngineConfig engineConfig = new EngineConfig();
     engineConfig.setBotId(BOT_ID);
     engineConfig.setBotName(BOT_NAME);

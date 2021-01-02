@@ -23,13 +23,13 @@
 
 package com.gazbert.bxbot.trading.api;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.math.BigDecimal;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests default impl methods of TradingApi interface.
@@ -62,7 +62,7 @@ public class TestTradingApi {
   }
 
   /** Test class. */
-  class MyApiImpl implements TradingApi {
+  static class MyApiImpl implements TradingApi {
 
     @Override
     public String getImplName() {

@@ -57,8 +57,6 @@ public class TestBarrysTradingStrategy {
 
   private static final String MARKET_ID = "btc_usd";
   private static final String MARKET_NAME = "BTC_USD";
-  private static final String BASE_CURRENCY = "BTC";
-  private static final String COUNTER_CURRENCY = "USD";
 
   private static final String CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT = "20"; // USD amount
   private static final String CONFIG_ITEM_MINIMUM_PERCENTAGE_GAIN = "2";
@@ -243,13 +241,8 @@ public class TestBarrysTradingStrategy {
     final BigDecimal lastOrderPrice = new BigDecimal("1454.018");
     final Object orderState = createMockOrder(OrderType.BUY, lastOrderPrice, lastOrderAmount);
 
-    // expect to check if the buy order has filled
-    final OpenOrder unfilledOrder = createMock(OpenOrder.class);
-    final List<OpenOrder> openOrders = new ArrayList<>();
-    openOrders.add(unfilledOrder); // still have open order
-
     replay(context, config, marketBuyOrder, marketSellOrder,
-        orderState, unfilledOrder);
+        orderState);
 
     final BarrysTradingStrategy strategy = new BarrysTradingStrategy();
 
@@ -260,7 +253,7 @@ public class TestBarrysTradingStrategy {
     strategy.execute();
 
     verify(context, config, marketBuyOrder, marketSellOrder,
-        orderState, unfilledOrder);
+        orderState);
   }
 
   /*
@@ -604,9 +597,6 @@ public class TestBarrysTradingStrategy {
             new TransactionEntry(ORDER_ID, OrderType.SELL.getStringValue(), FILLED,
                     MARKET_NAME, lastOrderAmount, bidSpotPrice, strategy, exchangeApi);
     expect(transactionRepo.save(sellEntry)).andReturn(sellEntry);
-
-    // expect to send new sell order to exchange and receive timeout exception
-    final BigDecimal requiredProfitInPercent = new BigDecimal("0.02");
 
     final BigDecimal amountOfUnitsToBuy = new BigDecimal("0.01375499");
     expect(context.getAmountOfBaseCurrency(

@@ -31,7 +31,7 @@ import static org.easymock.EasyMock.verify;
 import java.util.Collections;
 import java.util.Map;
 import org.easymock.EasyMock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.cloud.context.restart.RestartEndpoint;
 
 /**
@@ -43,12 +43,12 @@ public class TestBotRestartService {
 
   @Test
   public void whenRestartCalledThenExpectBotStatusToBeRestarting() {
-    final Map restartingStatus = Collections.singletonMap("message", "Restarting");
+    final Map<String, String> restartingStatus = Collections.singletonMap("message", "Restarting");
     final RestartEndpoint restartEndpoint = EasyMock.createMock(RestartEndpoint.class);
     expect(restartEndpoint.restart()).andReturn(restartingStatus);
     replay(restartEndpoint);
 
-    final BotRestartServiceImpl botRestartService = new BotRestartServiceImpl(restartEndpoint);
+    final BotRestartServiceImpl botRestartService = new BotRestartServiceImpl();
     final String status = botRestartService.restart();
 
     assertThat(status).isEqualTo(restartingStatus.get(restartingStatus.keySet().iterator().next()));

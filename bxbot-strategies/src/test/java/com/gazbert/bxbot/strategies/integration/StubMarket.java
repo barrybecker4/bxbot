@@ -12,7 +12,6 @@ public final class StubMarket implements Market {
   private static final String MARKET_ID = "btc_usd";
   private static final String MARKET_NAME = "BTC_USD";
 
-  private final String name = MARKET_NAME;
   private String id = MARKET_ID;
   private final String baseCurrency;
   private final String counterCurrency;
@@ -24,7 +23,7 @@ public final class StubMarket implements Market {
   }
 
   public String getName() {
-    return name;
+    return MARKET_NAME;
   }
 
   public void setId(String id) {
@@ -63,7 +62,7 @@ public final class StubMarket implements Market {
   @Override
   public String toString() {
     return MoreObjects.toStringHelper(this)
-            .add("name", name)
+            .add("name", MARKET_NAME)
             .add("id", id)
             .add("baseCurrency", baseCurrency)
             .add("counterCurrency", counterCurrency)

@@ -29,7 +29,7 @@ import static org.easymock.EasyMock.replay;
 import static org.easymock.EasyMock.verify;
 
 import org.easymock.EasyMock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthEndpoint;
 import org.springframework.boot.actuate.health.Status;
@@ -51,7 +51,7 @@ public class TestBotStatusService {
     expect(healthEndpoint.health()).andReturn(health);
     replay(healthEndpoint);
 
-    final BotStatusServiceImpl botStatusService = new BotStatusServiceImpl(healthEndpoint);
+    final BotStatusServiceImpl botStatusService = new BotStatusServiceImpl();
     final String fetchedBotStatus = botStatusService.getStatus();
 
     assertThat(fetchedBotStatus).isEqualTo(botStatus);

@@ -32,7 +32,7 @@ import java.nio.charset.Charset;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import org.easymock.EasyMock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.actuate.logging.LogFileWebEndpoint;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
@@ -65,7 +65,7 @@ public class TestBotLogfileService {
     expect(logFileWebEndpoint.logFile()).andReturn(resource);
     replay(logFileWebEndpoint);
 
-    final BotLogfileServiceImpl botLogfileService = new BotLogfileServiceImpl(logFileWebEndpoint);
+    final BotLogfileServiceImpl botLogfileService = new BotLogfileServiceImpl();
     final String fetchedLogfile = botLogfileService.getLogfile(3);
 
     assertThat(fetchedLogfile).isEqualTo(expectedLogfileContent);
@@ -90,7 +90,7 @@ public class TestBotLogfileService {
     expect(logFileWebEndpoint.logFile()).andReturn(resource);
     replay(logFileWebEndpoint);
 
-    final BotLogfileServiceImpl botLogfileService = new BotLogfileServiceImpl(logFileWebEndpoint);
+    final BotLogfileServiceImpl botLogfileService = new BotLogfileServiceImpl();
     final String fetchedLogfile = botLogfileService.getLogfile(2); // 2 lines only
 
     assertThat(fetchedLogfile).isEqualTo(expectedLogfileContent);
@@ -115,7 +115,7 @@ public class TestBotLogfileService {
     expect(logFileWebEndpoint.logFile()).andReturn(resource);
     replay(logFileWebEndpoint);
 
-    final BotLogfileServiceImpl botLogfileService = new BotLogfileServiceImpl(logFileWebEndpoint);
+    final BotLogfileServiceImpl botLogfileService = new BotLogfileServiceImpl();
     final String fetchedLogfile = botLogfileService.getLogfileTail(2); // tail 2 lines only
 
     assertThat(fetchedLogfile).isEqualTo(expectedLogfileContent);
@@ -143,7 +143,7 @@ public class TestBotLogfileService {
     expect(logFileWebEndpoint.logFile()).andReturn(resource);
     replay(logFileWebEndpoint);
 
-    final BotLogfileServiceImpl botLogfileService = new BotLogfileServiceImpl(logFileWebEndpoint);
+    final BotLogfileServiceImpl botLogfileService = new BotLogfileServiceImpl();
     final String fetchedLogfile = botLogfileService.getLogfileTail(4); // attempt 4 lines
 
     assertThat(fetchedLogfile).isEqualTo(expectedLogfileContent); // expect last 3
@@ -168,7 +168,7 @@ public class TestBotLogfileService {
     expect(logFileWebEndpoint.logFile()).andReturn(resource);
     replay(logFileWebEndpoint);
 
-    final BotLogfileServiceImpl botLogfileService = new BotLogfileServiceImpl(logFileWebEndpoint);
+    final BotLogfileServiceImpl botLogfileService = new BotLogfileServiceImpl();
     final String fetchedLogfile = botLogfileService.getLogfileHead(2); // head 2 lines only
 
     assertThat(fetchedLogfile).isEqualTo(expectedLogfileContent);
@@ -196,7 +196,7 @@ public class TestBotLogfileService {
     expect(logFileWebEndpoint.logFile()).andReturn(resource);
     replay(logFileWebEndpoint);
 
-    final BotLogfileServiceImpl botLogfileService = new BotLogfileServiceImpl(logFileWebEndpoint);
+    final BotLogfileServiceImpl botLogfileService = new BotLogfileServiceImpl();
     final String fetchedLogfile = botLogfileService.getLogfileHead(4); // attempt 4 lines
 
     assertThat(fetchedLogfile).isEqualTo(expectedLogfileContent); // expect first 3
@@ -223,7 +223,7 @@ public class TestBotLogfileService {
     expect(logFileWebEndpoint.logFile()).andReturn(resource);
     replay(logFileWebEndpoint);
 
-    final BotLogfileServiceImpl botLogfileService = new BotLogfileServiceImpl(logFileWebEndpoint);
+    final BotLogfileServiceImpl botLogfileService = new BotLogfileServiceImpl();
     final int maxLogfileSizeInBytes = 1024;
     final Resource logfileAsResource =
         botLogfileService.getLogfileAsResource(maxLogfileSizeInBytes);
@@ -250,7 +250,7 @@ public class TestBotLogfileService {
     expect(logFileWebEndpoint.logFile()).andReturn(resource);
     replay(logFileWebEndpoint);
 
-    final BotLogfileServiceImpl botLogfileService = new BotLogfileServiceImpl(logFileWebEndpoint);
+    final BotLogfileServiceImpl botLogfileService = new BotLogfileServiceImpl();
     final int maxLogfileSizeInBytes = firstLineOfLogfile.length();
     final Resource logfileAsResource =
         botLogfileService.getLogfileAsResource(maxLogfileSizeInBytes);

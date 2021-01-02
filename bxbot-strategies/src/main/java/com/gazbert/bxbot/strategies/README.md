@@ -4,13 +4,13 @@
  - ./gradlew clean build
  - ./gradlew buildTarGzipDist   (custom yaml files in config dir and will go in the bundle)
  - cd build/distributions
- - tar -xzf bxbot-app-1.0.1.tar.gz
- - cd bxbot-app-1.0.1
+ - tar -xzf bxbot-app-1.0.2.tar.gz
+ - cd bxbot-app-1.0.2
  - ./bxbot.sh start
  - For successive times do: ./gradlew clean build buildTarGzipDist
    
 ### Output:
- - Look in build/distributions/bxbox-app-1.0.1/logs/bxbot.log
+ - Look in build/distributions/bxbox-app-1.0.2/logs/bxbot.log
  - To view record of transactions in db:
     - Look in the h2 db (see local application.properties for instructions how to view in browser)
     - H2 data persisted in ~/.h2

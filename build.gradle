@@ -4,10 +4,11 @@ buildscript {
         mavenCentral()
     }
 
+
     dependencies {
         classpath("io.spring.gradle:dependency-management-plugin:1.0.9.RELEASE")
-        classpath("org.springframework.boot:spring-boot-gradle-plugin:2.1.13.RELEASE")
-        classpath "gradle.plugin.com.github.spotbugs:spotbugs-gradle-plugin:2.0.0"
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:2.4.1")
+        classpath "com.github.spotbugs:com.github.spotbugs.gradle.plugin:4.6.0"
     }
 }
 
@@ -23,11 +24,11 @@ buildScan {
 }
 
 ext.versions = [
-        springBootVersion        : '2.1.13.RELEASE',
-        springCloudVersion       : '2.1.5.RELEASE',
-        springTxVersion          : '5.1.14.RELEASE',
-        springFoxVersion         : '2.9.2',
-        hibernateVaildatorVersion: '6.1.2.Final',
+        springBootVersion        : '2.4.1',
+        springCloudVersion       : '3.0.0',
+        springTxVersion          : '5.3.2',
+        springFoxVersion         : '3.0.0',
+        hibernateValidatorVersion: '7.0.0.Final',
         jaxbVersion              : '2.3.1',
         javaxMailVersion         : '1.6.2'
 ]
@@ -68,9 +69,9 @@ ext.libraries = [
         },
         spring_tx                       : dependencies.create("org.springframework:spring-tx:" + ext.versions.springTxVersion),
         jjwt                            : dependencies.create("io.jsonwebtoken:jjwt:0.9.1"),
-        google_guava                    : dependencies.create("com.google.guava:guava:28.2-jre"),
+        google_guava                    : dependencies.create("com.google.guava:guava:30.1-jre"),
         google_gson                     : dependencies.create("com.google.code.gson:gson:2.8.6"),
-        h2                              : dependencies.create("com.h2database:h2:1.4.199"),
+        h2                              : dependencies.create("com.h2database:h2:1.4.200"),
         javax_mail_api                  : dependencies.create("javax.mail:javax.mail-api:" + ext.versions.javaxMailVersion),
         javax_mail_sun                  : dependencies.create("com.sun.mail:javax.mail:" + ext.versions.javaxMailVersion),
         javax_xml_api                   : dependencies.create("javax.xml.bind:jaxb-api:" + ext.versions.jaxbVersion),
@@ -84,10 +85,10 @@ ext.libraries = [
         swagger_annotations             : dependencies.create("io.swagger:swagger-annotations:1.6.0"),
 
         validation_api                  : dependencies.create("javax.validation:validation-api:2.0.0.Final"),
-        hibernate_validator             : dependencies.create("org.hibernate.validator:hibernate-validator:" + ext.versions.hibernateVaildatorVersion),
-        hibernate_validator_annotation_processor: dependencies.create("org.hibernate.validator:hibernate-validator-annotation-processor:" + ext.versions.hibernateVaildatorVersion),
+        hibernate_validator             : dependencies.create("org.hibernate.validator:hibernate-validator:" + ext.versions.hibernateValidatorVersion),
+        hibernate_validator_annotation_processor: dependencies.create("org.hibernate.validator:hibernate-validator-annotation-processor:" + ext.versions.hibernateValidatorVersion),
 
-        junit                           : dependencies.create("junit:junit:4.13"),
+        junit                           : dependencies.create("org.junit.jupiter:junit-jupiter-engine:5.6.2"),
         powermock_junit                 : dependencies.create("org.powermock:powermock-module-junit4:2.0.6"),
         powermock_api_easymock          : dependencies.create("org.powermock:powermock-api-easymock:2.0.6"),
         easymock                        : dependencies.create("org.easymock:easymock:4.2"),
@@ -109,7 +110,7 @@ allprojects {
     apply plugin: "jacoco"
 
     group = 'com.gazbert.bxbot'
-    version = '1.0.1'
+    version = '1.0.2'
 }
 
 subprojects {
@@ -149,18 +150,25 @@ subprojects {
     }
 
     spotbugs {
-        ignoreFailures = false
-        sourceSets = [sourceSets.main]
+        ignoreFailures = true
+        //sourceSets = [sourceSets.main]
         excludeFilter = file("${rootDir}/etc/spotbugs-exclude-filter.xml")
         reportsDir = file("$project.buildDir/reports/spotbugs")
         effort = "max"
     }
-    tasks.withType(com.github.spotbugs.SpotBugsTask) {
+    spotbugsMain {
         reports {
-            xml.enabled false
-            html.enabled true
+            xml.enabled = false
+            html {
+                enabled = true // still shows in xml for some reason...
+                //destination = file("$buildDir/reports/spotbugs/main/spotbugs.html")
+                stylesheet = 'fancy-hist.xsl' +
+                        '' +
+                        ''
+            }
         }
     }
+
 
     jacoco {
         toolVersion = "0.8.5"

@@ -14,6 +14,8 @@ dependencies {
     compile libraries.google_guava
     compile libraries.javax_mail_api
     compile libraries.javax_mail_sun
+    compile libraries.spring_boot_starter_actuator
+    compile libraries.spring_cloud_starter
 
     testCompile libraries.junit
     testCompile libraries.powermock_junit
@@ -32,7 +34,7 @@ jacocoTestCoverageVerification {
             limit {
                 counter = 'LINE'
                 value = 'COVEREDRATIO'
-                minimum = 0.8
+                minimum = 0.7
             }
         }
     }

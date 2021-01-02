@@ -28,7 +28,6 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.context.restart.RestartEndpoint;
 import org.springframework.stereotype.Service;
 
 /**
@@ -40,19 +39,19 @@ import org.springframework.stereotype.Service;
 public class BotRestartServiceImpl implements BotRestartService {
 
   private static final Logger LOG = LogManager.getLogger();
-  private RestartEndpoint restartEndpoint;
+  //private final RestartEndpoint restartEndpoint;
 
   @Autowired
-  public BotRestartServiceImpl(RestartEndpoint restartEndpoint) {
-    this.restartEndpoint = restartEndpoint;
+  public BotRestartServiceImpl() { //RestartEndpoint restartEndpoint) {
+    //this.restartEndpoint = restartEndpoint;
   }
 
   @Override
   public String restart() {
     // Spring endpoint returns a map: Collections.singletonMap("message", "Restarting");
-    final Map result = (Map) restartEndpoint.restart();
-    final String status = (String) result.get("message");
-    LOG.info(() -> "Restart result: " + status);
-    return status;
+    //final Map<String, String> result = (Map<String, String>) restartEndpoint.restart();
+    //final String status = result.get("message");
+    //LOG.info(() -> "Restart result: " + status);
+    return "not supported"; //status;
   }
 }

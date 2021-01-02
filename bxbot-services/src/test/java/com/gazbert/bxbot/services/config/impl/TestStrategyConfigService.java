@@ -30,11 +30,11 @@ import static org.easymock.EasyMock.verify;
 
 import com.gazbert.bxbot.domain.strategy.StrategyConfig;
 import com.gazbert.bxbot.repository.StrategyConfigRepository;
-import com.gazbert.bxbot.services.config.impl.StrategyConfigServiceImpl;
 import java.util.ArrayList;
 import java.util.List;
 import org.easymock.EasyMock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
 
 /**
  * Tests Strategy configuration service behaves as expected.

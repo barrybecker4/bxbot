@@ -36,7 +36,7 @@ import java.util.stream.Stream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.actuate.logging.LogFileWebEndpoint;
+//import org.springframework.boot.actuate.logging.LogFileWebEndpoint;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -51,20 +51,20 @@ public class BotLogfileServiceImpl implements BotLogfileService {
 
   private static final Logger LOG = LogManager.getLogger();
   private static final String NEWLINE = System.getProperty("line.separator");
-  private LogFileWebEndpoint logFileWebEndpoint;
+  //private final LogFileWebEndpoint logFileWebEndpoint;
 
   @Autowired
-  public BotLogfileServiceImpl(LogFileWebEndpoint logFileWebEndpoint) {
-    this.logFileWebEndpoint = logFileWebEndpoint;
+  public BotLogfileServiceImpl() {//LogFileWebEndpoint logFileWebEndpoint) {
+    //this.logFileWebEndpoint = logFileWebEndpoint;
   }
 
   @Override
   public Resource getLogfileAsResource(int maxFileSize) throws IOException {
-    final Resource logfile = logFileWebEndpoint.logFile();
-    final long logfileLength = logfile.contentLength();
+    //final Resource logfile = logFileWebEndpoint.logFile();
+    final long logfileLength = 1; // logfile.contentLength();
     try {
       if (logfileLength <= maxFileSize) {
-        return logfile;
+        return null; //logfile;
       } else {
         LOG.warn(
             () ->
@@ -72,7 +72,7 @@ public class BotLogfileServiceImpl implements BotLogfileService {
                     + maxFileSize
                     + " LogfileSize: "
                     + logfileLength);
-        final InputStream inputStream = logfile.getInputStream();
+        final InputStream inputStream = null; //logfile.getInputStream();
         final byte[] truncatedLogfile = new byte[maxFileSize];
         inputStream.readNBytes(truncatedLogfile, 0, maxFileSize);
         return new ByteArrayResource(truncatedLogfile);
@@ -91,7 +91,7 @@ public class BotLogfileServiceImpl implements BotLogfileService {
 
   @Override
   public String getLogfileHead(int lineCount) throws IOException {
-    final Resource resource = logFileWebEndpoint.logFile();
+    final Resource resource = null; //logFileWebEndpoint.logFile();
     final Path logfilePath = Paths.get(resource.getURI());
     final List<String> fileLines = headFile(logfilePath, lineCount);
     final StringBuilder truncatedFile = new StringBuilder();
@@ -101,7 +101,7 @@ public class BotLogfileServiceImpl implements BotLogfileService {
 
   @Override
   public String getLogfileTail(int lineCount) throws IOException {
-    final Resource resource = logFileWebEndpoint.logFile();
+    final Resource resource = null; //logFileWebEndpoint.logFile();
     final Path logfilePath = Paths.get(resource.getURI());
     final List<String> fileLines = tailFile(logfilePath, lineCount);
     final StringBuilder truncatedFile = new StringBuilder();
@@ -155,7 +155,7 @@ public class BotLogfileServiceImpl implements BotLogfileService {
 
     List<String> getHeadLines() {
       // Truncates the file tail if file line count > maxLines
-      return IntStream.range(0, maxLines > offset ? offset : maxLines)
+      return IntStream.range(0, Math.min(maxLines, offset))
           .mapToObj(idx -> lines[idx % maxLines])
           .collect(Collectors.toList());
     }

@@ -30,11 +30,11 @@ import static org.easymock.EasyMock.verify;
 
 import com.gazbert.bxbot.domain.market.MarketConfig;
 import com.gazbert.bxbot.repository.MarketConfigRepository;
-import com.gazbert.bxbot.services.config.impl.MarketConfigServiceImpl;
 import java.util.ArrayList;
 import java.util.List;
 import org.easymock.EasyMock;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
 
 /**
  * Tests Market configuration service behaves as expected.
