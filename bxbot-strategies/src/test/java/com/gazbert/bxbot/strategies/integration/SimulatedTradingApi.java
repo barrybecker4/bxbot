@@ -68,7 +68,7 @@ public class SimulatedTradingApi implements TradingApi {
    * Close any open orders where the current threshold has based the order bid/ask
    * Then remove that order from the list.
    */
-  public void advanceToNextTradingCyle() {
+  public void advanceToNextTradingCycle() {
 
     double newPrice = seriesData[index];
     index++;
@@ -91,6 +91,7 @@ public class SimulatedTradingApi implements TradingApi {
 
   private void updateBalancesForExecutedOrder(OpenOrder order) {
     Map<String, BigDecimal> availableBalances = balanceInfo.getBalancesAvailable();
+    System.out.println("executing simulated order: " + order);
     if (order.getType() == OrderType.BUY) {
       // buying BTC, adjust the balances
       BigDecimal newBtcBalance =
@@ -111,8 +112,7 @@ public class SimulatedTradingApi implements TradingApi {
   }
 
   @Override
-  public MarketOrderBook getMarketOrders(String marketId)
-          throws ExchangeNetworkException, TradingApiException {
+  public MarketOrderBook getMarketOrders(String marketId) {
 
     if (index >= seriesData.length) {
       throw new IllegalStateException("index " + index + " exceeded size of seriesData");

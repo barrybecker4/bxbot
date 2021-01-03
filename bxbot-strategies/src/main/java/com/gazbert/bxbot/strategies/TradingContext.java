@@ -9,8 +9,11 @@ import com.gazbert.bxbot.trading.api.TradingApi;
 import com.gazbert.bxbot.trading.api.TradingApiException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -44,7 +47,7 @@ public class TradingContext {
 
   // typically "USD"
   public String getCounterCurrency() {
-    return market.getBaseCurrency();
+    return market.getCounterCurrency();
   }
 
   public List<MarketOrder> getBuyOrders() throws TradingApiException, ExchangeNetworkException {
@@ -123,13 +126,30 @@ public class TradingContext {
    */
   public boolean isOrderOpen(String orderId)
           throws TradingApiException, ExchangeNetworkException {
-    final List<OpenOrder> myOrders = tradingApi.getYourOpenOrders(market.getId());
-    for (final OpenOrder myOrder : myOrders) {
+    final List<OpenOrder> myOpenOrders = tradingApi.getYourOpenOrders(market.getId());
+    for (final OpenOrder myOrder : myOpenOrders) {
       if (myOrder.getId().equals(orderId)) {
         return true;
       }
     }
     return false;
+  }
+
+  /**
+   * Use current open market orders to see if any of the orders in a specified order list
+   * have been filled. If the id is not in the current open market orders, then we assume
+   * that it was filled.
+   *
+   * @return set of order ids that were filled. There could be 0, but it would be
+   *     very unusual for there to be more than one.
+   */
+  public Set<String> findFilledOrderIds(Set<String> orderIds)
+          throws TradingApiException, ExchangeNetworkException {
+    final List<OpenOrder> myOpenOrders = tradingApi.getYourOpenOrders(market.getId());
+    Set<String> myOrderIds =
+            myOpenOrders.stream().map(OpenOrder::getId).collect(Collectors.toSet());
+    myOrderIds.removeAll(orderIds);
+    return myOrderIds;
   }
 
   /**

@@ -4,23 +4,16 @@ import static com.gazbert.bxbot.domain.transaction.TransactionEntry.Status.FILLE
 import static com.gazbert.bxbot.domain.transaction.TransactionEntry.Status.SENT;
 
 import com.gazbert.bxbot.domain.transaction.TransactionEntry;
-import com.gazbert.bxbot.repository.TransactionsRepository;
 import com.gazbert.bxbot.strategy.api.IStrategyConfigItems;
 import com.gazbert.bxbot.strategy.api.StrategyException;
-import com.gazbert.bxbot.strategy.api.TradingStrategy;
 import com.gazbert.bxbot.trading.api.ExchangeNetworkException;
-import com.gazbert.bxbot.trading.api.Market;
 import com.gazbert.bxbot.trading.api.MarketOrder;
-import com.gazbert.bxbot.trading.api.TradingApi;
 import com.gazbert.bxbot.trading.api.TradingApiException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
 import java.util.Stack;
 import java.util.stream.Collectors;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.stereotype.Component;
 
@@ -33,45 +26,19 @@ import org.springframework.stereotype.Component;
  */
 @Configurable
 @Component("barrysMultiOrderTradingStrategy") // for Spring bean injection
-public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
+public class BarrysMultiOrderTradingStrategy extends AbstractTradingStrategy {
 
-  private static final Logger LOG = LogManager.getLogger();
   private static final BigDecimal ONE = new BigDecimal("1");
   private static final BigDecimal TWO = new BigDecimal("2");
 
-  private TradingContext context;
-  private BarrysMultiOrderTradingStrategyConfig strategyConfig;
   private OrderState lastOrder;
   private BigDecimal latestHighPrice;
 
   private final Stack<OrderState> buyOrderStack = new Stack<>();
   private final Stack<OrderState> sellOrderStack = new Stack<>();
 
-  @Autowired
-  private TransactionsRepository transactionRepo;
-
-  /**
-   * Called once by the Trading Engine when the bot starts up.
-   *
-   * @param tradingApi the Trading API. Use this to make trades and stuff.
-   * @param market the market the strategy is currently running on -
-   *               you wire this up in the markets.yaml and strategies.yaml files.
-   * @param config Contains any (optional) config you set up in the strategies.yaml file.
-   */
-  @Override
-  public void init(TradingApi tradingApi, Market market, IStrategyConfigItems config) {
-    init(new TradingContext(tradingApi, market), config, transactionRepo);
-  }
-
-  /**
-   * Used by tests.
-   */
-  public void init(TradingContext context, IStrategyConfigItems config,
-                   TransactionsRepository transactionRepo) {
-    this.context = context;
-    strategyConfig = new BarrysMultiOrderTradingStrategyConfig(config);
-    this.transactionRepo = transactionRepo;
-    LOG.info(() -> strategyConfig.getStrategyId() + " was initialised successfully!");
+  protected BaseStrategyConfig createTradingStrategyConfig(IStrategyConfigItems config) {
+    return new BarrysMultiOrderTradingStrategyConfig(config);
   }
 
   /**
@@ -122,6 +89,7 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
     }
     if (!sellOrderStack.isEmpty()) {
       checkForFilledSellOrder(currentBidPrice);
+      // TODO: replace with sendBuyOrderIfFilledSellOrder()
     }
     sendBuyOrderIfSufficientlyLow(currentBidPrice);
     sendSellOrderIfReachingNewHigh(currentAskPrice);
@@ -187,11 +155,12 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
          * 2. We could end up selling at a loss.
          */
         final BigDecimal amountToAdd =
-                lastOrder.price.multiply(strategyConfig.getPercentChangeThreshold());
+                lastOrder.price.multiply(getConfig().getPercentChangeThreshold());
         LOG.info(() -> context.getMarketName()
                 + " Amount to add to last buy order fill price: " + amountToAdd);
 
 
+        // TODO: have the exchagne API do the rounding
         // Most exchanges use 8 decimal places, but Kraken uses 1.
         // It's usually best to round up the ASK price in your calculations to maximise gains.
         int decimals = context.getExchangeApi().contains("Kraken") ? 1 : 8;
@@ -200,8 +169,6 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
 
         // sendSellOrder
         sendSellOrder(lastOrder.amount, newAskPrice);
-      } else {
-        logBuyNotFilledYet();
       }
     } catch (ExchangeNetworkException e) {
       handleExchangeNetworkException("New Order to SELL base currency failed", e);
@@ -249,10 +216,10 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
    */
   private void sendBuyOrderIfSufficientlyLow(BigDecimal currentBidPrice)
           throws StrategyException {
-    BigDecimal percentThresh = strategyConfig.getPercentChangeThreshold();
+    BigDecimal percentThresh = getConfig().getPercentChangeThreshold();
     boolean belowThresh =
             currentBidPrice.compareTo(lastOrder.price.multiply(ONE.subtract(percentThresh))) < 0;
-    boolean availableSlots = sellOrderStack.size() < strategyConfig.getMaxConcurrentSellOrders();
+    boolean availableSlots = sellOrderStack.size() < getConfig().getMaxConcurrentSellOrders();
     if (belowThresh && availableSlots) {
       LOG.info(() -> context.getMarketName()
               + "Placing new BUY order at ["
@@ -274,12 +241,12 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
   private void sendSellOrderIfReachingNewHigh(BigDecimal currentAskPrice)
           throws TradingApiException, ExchangeNetworkException {
 
-    BigDecimal percentThresh = strategyConfig.getPercentChangeThreshold();
+    BigDecimal percentThresh = getConfig().getPercentChangeThreshold();
     boolean aboveThresh =
             currentAskPrice.compareTo(latestHighPrice.multiply(ONE.add(percentThresh))) > 0;
 
     final BigDecimal amountOfBaseCurrencyToSell =
-            context.getAmountOfBaseCurrency(strategyConfig.getCounterCurrencyBuyOrderAmount());
+            context.getAmountOfBaseCurrency(getConfig().getCounterCurrencyBuyOrderAmount());
 
     BigDecimal minimumNeeded = amountOfBaseCurrencyToSell.multiply(TWO);
     boolean fundsAvailable =
@@ -298,7 +265,7 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
     try {
       final BigDecimal amountOfBaseCurrencyToBuy =
               context.getAmountOfBaseCurrency(
-                      strategyConfig.getCounterCurrencyBuyOrderAmount());
+                      getConfig().getCounterCurrencyBuyOrderAmount());
 
       lastOrder = context.sendBuyOrder(amountOfBaseCurrencyToBuy, price);
       buyOrderStack.push(lastOrder);
@@ -311,6 +278,10 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
     }
   }
 
+  private BarrysMultiOrderTradingStrategyConfig getConfig() {
+    return (BarrysMultiOrderTradingStrategyConfig) strategyConfig;
+  }
+
   private OrderState sendSellOrder(BigDecimal amountToSell, BigDecimal askPrice)
           throws TradingApiException, ExchangeNetworkException {
 
@@ -319,15 +290,6 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
     sellOrderStack.push(newOrder);
     persistTransaction(SENT, newOrder);
     return newOrder;
-  }
-
-  /*
-   * Show current open buy orders.
-   */
-  private void logBuyNotFilledYet() {
-    LOG.info(() -> context.getMarketName()
-            + " Still have BUY Orders! " + lastOrder.id
-            + " They are " + getOrderPrices(buyOrderStack));
   }
 
   /*

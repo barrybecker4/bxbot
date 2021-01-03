@@ -4,21 +4,14 @@ import static com.gazbert.bxbot.domain.transaction.TransactionEntry.Status.FILLE
 import static com.gazbert.bxbot.domain.transaction.TransactionEntry.Status.SENT;
 
 import com.gazbert.bxbot.domain.transaction.TransactionEntry;
-import com.gazbert.bxbot.repository.TransactionsRepository;
 import com.gazbert.bxbot.strategy.api.IStrategyConfigItems;
 import com.gazbert.bxbot.strategy.api.StrategyException;
-import com.gazbert.bxbot.strategy.api.TradingStrategy;
 import com.gazbert.bxbot.trading.api.ExchangeNetworkException;
-import com.gazbert.bxbot.trading.api.Market;
 import com.gazbert.bxbot.trading.api.MarketOrder;
-import com.gazbert.bxbot.trading.api.TradingApi;
 import com.gazbert.bxbot.trading.api.TradingApiException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.stereotype.Component;
 
@@ -31,39 +24,12 @@ import org.springframework.stereotype.Component;
  */
 @Configurable
 @Component("barrysTradingStrategy") // used to load the strategy using Spring bean injection
-public class BarrysTradingStrategy implements TradingStrategy {
+public class BarrysTradingStrategy extends AbstractTradingStrategy {
 
-  private static final Logger LOG = LogManager.getLogger();
-
-  private TradingContext context;
-  private BarrysTradingStrategyConfig strategyConfig;
   private OrderState lastOrder;
 
-  @Autowired
-  private TransactionsRepository transactionRepo;
-
-  /**
-   * Called once by the Trading Engine when the bot starts up.
-   *
-   * @param tradingApi the Trading API. Use this to make trades and stuff.
-   * @param market the market the strategy is currently running on -
-   *               you wire this up in the markets.yaml and strategies.yaml files.
-   * @param config Contains any (optional) config you set up in the strategies.yaml file.
-   */
-  @Override
-  public void init(TradingApi tradingApi, Market market, IStrategyConfigItems config) {
-    init(new TradingContext(tradingApi, market), config, transactionRepo);
-  }
-
-  /**
-   * Used by tests.
-   */
-  public void init(TradingContext context, IStrategyConfigItems config,
-                   TransactionsRepository transactionRepo) {
-    this.context = context;
-    strategyConfig = new BarrysTradingStrategyConfig(config);
-    this.transactionRepo = transactionRepo;
-    LOG.info(() -> strategyConfig.getStrategyId() + " was initialised successfully!");
+  protected BaseStrategyConfig createTradingStrategyConfig(IStrategyConfigItems config) {
+    return new BarrysTradingStrategyConfig(config);
   }
 
   /**
@@ -168,7 +134,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
       // Calculate amount of base currency (BTC) to buy for given amount of counter currency (USD).
       final BigDecimal amountOfBaseCurrencyToBuy =
           context.getAmountOfBaseCurrency(
-                  strategyConfig.getCounterCurrencyBuyOrderAmount());
+                  getConfig().getCounterCurrencyBuyOrderAmount());
 
       lastOrder = context.sendBuyOrder(amountOfBaseCurrencyToBuy, currentBidPrice);
       persistTransaction(SENT, amountOfBaseCurrencyToBuy, currentBidPrice);
@@ -218,7 +184,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
          * send to the exchange...
          */
         final BigDecimal amountToAdd =
-                lastOrder.price.multiply(strategyConfig.getMinimumPercentageGain());
+                lastOrder.price.multiply(getConfig().getMinimumPercentageGain());
         LOG.info(() -> context.getMarketName()
                 + " Amount to add to last buy order fill price: " + amountToAdd);
 
@@ -264,7 +230,7 @@ public class BarrysTradingStrategy implements TradingStrategy {
         // Get amount of base currency (BTC) we can buy for given counter currency (USD) amount.
         final BigDecimal amountOfBaseCurrencyToBuy =
             context.getAmountOfBaseCurrency(
-                strategyConfig.getCounterCurrencyBuyOrderAmount());
+                getConfig().getCounterCurrencyBuyOrderAmount());
 
         lastOrder = context.sendBuyOrder(amountOfBaseCurrencyToBuy, currentBidPrice);
         persistTransaction(SENT, amountOfBaseCurrencyToBuy, currentBidPrice);
@@ -276,6 +242,10 @@ public class BarrysTradingStrategy implements TradingStrategy {
     } catch (TradingApiException e) {
       handleTradingApiException("New order to BUY base currency failed", e);
     }
+  }
+
+  private BarrysTradingStrategyConfig getConfig() {
+    return (BarrysTradingStrategyConfig) strategyConfig;
   }
 
   /*
