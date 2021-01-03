@@ -88,8 +88,7 @@ public class BarrysMultiOrderTradingStrategy extends AbstractTradingStrategy {
       sendSellOrderIfFilledBuyOrder();
     }
     if (!sellOrderStack.isEmpty()) {
-      checkForFilledSellOrder(currentBidPrice);
-      // TODO: replace with sendBuyOrderIfFilledSellOrder()
+      sendBuyOrderIfFilledSellOrder(currentBidPrice);
     }
     sendBuyOrderIfSufficientlyLow(currentBidPrice);
     sendSellOrderIfReachingNewHigh(currentAskPrice);
@@ -160,7 +159,7 @@ public class BarrysMultiOrderTradingStrategy extends AbstractTradingStrategy {
                 + " Amount to add to last buy order fill price: " + amountToAdd);
 
 
-        // TODO: have the exchagne API do the rounding
+        // TODO: have the exchange API do the rounding
         // Most exchanges use 8 decimal places, but Kraken uses 1.
         // It's usually best to round up the ASK price in your calculations to maximise gains.
         int decimals = context.getExchangeApi().contains("Kraken") ? 1 : 8;
@@ -168,7 +167,10 @@ public class BarrysMultiOrderTradingStrategy extends AbstractTradingStrategy {
                 lastOrder.price.add(amountToAdd).setScale(decimals, RoundingMode.HALF_UP);
 
         // sendSellOrder
-        sendSellOrder(lastOrder.amount, newAskPrice);
+        boolean availableSlots = sellOrderStack.size() < getConfig().getMaxConcurrentSellOrders();
+        if (availableSlots) {
+          sendSellOrder(lastOrder.amount, newAskPrice);
+        }
       }
     } catch (ExchangeNetworkException e) {
       handleExchangeNetworkException("New Order to SELL base currency failed", e);
@@ -178,22 +180,32 @@ public class BarrysMultiOrderTradingStrategy extends AbstractTradingStrategy {
   }
 
   /**
-   * If the top order has been filled {
+   * If the top sell order has been filled {
    *    pop the top filled sell order from the sellOrderStack.
    *    set lastTransactionPrice to the price that it was sold at.
+   *    add a buy order for threshold lower price
    * }
    */
-  private void checkForFilledSellOrder(BigDecimal currentBidPrice) throws StrategyException {
+  private void sendBuyOrderIfFilledSellOrder(BigDecimal currentBidPrice) throws StrategyException {
     try {
       boolean lastOrderFound = context.isOrderOpen(sellOrderStack.peek().id);
 
-      // If the order is not there, it must have all filled.
+      // If the sell order is not there, it must have all filled.
       if (!lastOrderFound) {
         lastOrder = sellOrderStack.pop();
         LOG.info(() -> context.getMarketName()
                 + " ^^^ Yay!!! SELL Order Id [" + lastOrder.id + "] filled at ["
                 + lastOrder.price + "]");
         persistTransaction(FILLED, lastOrder);
+
+        // add a buy order for lower price
+        BigDecimal buyPrice =
+                lastOrder.price.multiply(ONE.add(getConfig().getPercentChangeThreshold()));
+
+        boolean availableSlots = buyOrderStack.size() < getConfig().getMaxConcurrentSellOrders();
+        if (availableSlots) {
+          sendBuyOrder(buyPrice);
+        }
       } else {
         logSellOrderNotFilledYet(currentBidPrice);
       }

@@ -170,7 +170,7 @@ public class TestBarrysMultiOrderTradingStrategy {
   public void testStrategySendsNewSellOrderWhenBuyOrderFilled() throws Exception {
 
     expect(context.isOrderOpen(ORDER_ID)).andReturn(false).times(2);
-    expect(context.getBaseCurrencyBalance()).andReturn(new BigDecimal("2.1"));
+    expect(context.getBaseCurrencyBalance()).andReturn(new BigDecimal("2.1")).anyTimes();
 
     // expect to get current bid and ask spot prices
     final BigDecimal bidSpotPrice = new BigDecimal("1453.014");
@@ -181,7 +181,7 @@ public class TestBarrysMultiOrderTradingStrategy {
     final BigDecimal amountOfUnitsToBuy = new BigDecimal("0.333123");
     expect(context.getAmountOfBaseCurrency(
             new BigDecimal(CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT)))
-            .andReturn(amountOfUnitsToBuy);
+            .andReturn(amountOfUnitsToBuy).anyTimes();
 
     // mock the buy order state that was filled
     final BigDecimal lastOrderAmount = new BigDecimal("35");
@@ -217,6 +217,29 @@ public class TestBarrysMultiOrderTradingStrategy {
             MARKET_NAME, lastOrderAmount, newAskPrice, strategyName, exchangeApi);
 
     expect(transactionRepo.save(sellEntryFilled)).andReturn(sellEntryFilled);
+
+    BigDecimal newBuyPrice = new BigDecimal("1572.6658688000000000");
+    OrderState expBuyOrder =
+            new OrderState(ORDER_ID, OrderType.BUY, newBuyPrice, amountOfUnitsToBuy);
+    expect(context.sendBuyOrder(amountOfUnitsToBuy, newBuyPrice)).andReturn(expBuyOrder);
+
+    TransactionEntry buySendEntry = new TransactionEntry(
+            ORDER_ID, OrderType.BUY.getStringValue(), SENT,
+            MARKET_NAME, amountOfUnitsToBuy, newBuyPrice, strategyName, exchangeApi);
+
+    expect(transactionRepo.save(buySendEntry)).andReturn(buySendEntry);
+
+    BigDecimal newBuyPrice2 = new BigDecimal("1453.014");
+    OrderState expBuyOrder2 =
+            new OrderState(ORDER_ID, OrderType.BUY, newBuyPrice2, amountOfUnitsToBuy);
+    expect(context.sendBuyOrder(amountOfUnitsToBuy, newBuyPrice2)).andReturn(expBuyOrder2);
+
+    TransactionEntry buySendEntry2 = new TransactionEntry(
+            ORDER_ID, OrderType.BUY.getStringValue(), SENT,
+            MARKET_NAME, amountOfUnitsToBuy, newBuyPrice2, strategyName, exchangeApi);
+
+    System.out.println("bs2 = " + buySendEntry2);
+    expect(transactionRepo.save(buySendEntry2)).andReturn(buySendEntry2);
 
     replay(context, config, transactionRepo, marketBuyOrder, marketSellOrder);
 

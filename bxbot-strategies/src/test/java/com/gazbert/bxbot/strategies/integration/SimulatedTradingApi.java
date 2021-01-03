@@ -91,7 +91,7 @@ public class SimulatedTradingApi implements TradingApi {
 
   private void updateBalancesForExecutedOrder(OpenOrder order) {
     Map<String, BigDecimal> availableBalances = balanceInfo.getBalancesAvailable();
-    System.out.println("executing simulated order: " + order);
+    //System.out.println("executing simulated order: " + order);
     if (order.getType() == OrderType.BUY) {
       // buying BTC, adjust the balances
       BigDecimal newBtcBalance =
