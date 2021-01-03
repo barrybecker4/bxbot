@@ -169,7 +169,7 @@ public class TestBarrysMultiOrderTradingStrategy {
   @Test
   public void testStrategySendsNewSellOrderWhenBuyOrderFilled() throws Exception {
 
-    expect(context.isOrderOpen(ORDER_ID)).andReturn(false);
+    expect(context.isOrderOpen(ORDER_ID)).andReturn(false).times(2);
     expect(context.getBaseCurrencyBalance()).andReturn(new BigDecimal("2.1"));
 
     // expect to get current bid and ask spot prices
@@ -209,7 +209,14 @@ public class TestBarrysMultiOrderTradingStrategy {
     TransactionEntry sellEntry = new TransactionEntry(
             ORDER_ID, OrderType.SELL.getStringValue(), SENT,
             MARKET_NAME, lastOrderAmount, newAskPrice, strategyName, exchangeApi);
+
     expect(transactionRepo.save(sellEntry)).andReturn(sellEntry);
+
+    TransactionEntry sellEntryFilled = new TransactionEntry(
+            ORDER_ID, OrderType.SELL.getStringValue(), FILLED,
+            MARKET_NAME, lastOrderAmount, newAskPrice, strategyName, exchangeApi);
+
+    expect(transactionRepo.save(sellEntryFilled)).andReturn(sellEntryFilled);
 
     replay(context, config, transactionRepo, marketBuyOrder, marketSellOrder);
 

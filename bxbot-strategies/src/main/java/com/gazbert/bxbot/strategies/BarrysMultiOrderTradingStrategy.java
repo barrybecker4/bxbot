@@ -316,6 +316,7 @@ public class BarrysMultiOrderTradingStrategy implements TradingStrategy {
 
     OrderState newOrder =
             context.sendSellOrder(amountToSell, askPrice);
+    sellOrderStack.push(newOrder);
     persistTransaction(SENT, newOrder);
     return newOrder;
   }

@@ -37,8 +37,13 @@ public class TradingContext {
     return market.getName();
   }
 
-  // typically BTC
+  // typically "BTC"
   public String getBaseCurrency() {
+    return market.getBaseCurrency();
+  }
+
+  // typically "USD"
+  public String getCounterCurrency() {
     return market.getBaseCurrency();
   }
 
@@ -51,14 +56,25 @@ public class TradingContext {
   }
 
   /**
-   * amount of base currency available to trade.
+   * Amount of base currency available to trade.
    *
    * @return amount of base currency available to trade.
    */
-  public BigDecimal getBaseCurrencyBalance() throws TradingApiException, ExchangeNetworkException {
-    final Map<String, BigDecimal> balancesAvailable =
-            tradingApi.getBalanceInfo().getBalancesAvailable();
-    return balancesAvailable.get(getBaseCurrency());
+  public BigDecimal getBaseCurrencyBalance()
+          throws TradingApiException, ExchangeNetworkException {
+    return getAvailableBalances().get(getBaseCurrency());
+  }
+
+  public BigDecimal getCounterCurrencyBalance()
+          throws TradingApiException, ExchangeNetworkException {
+    return getAvailableBalances().get(getCounterCurrency());
+  }
+
+  // call this version if you need both base and counter currency balances
+  // to avoid multiple api calls
+  public Map<String, BigDecimal> getAvailableBalances()
+          throws TradingApiException, ExchangeNetworkException {
+    return tradingApi.getBalanceInfo().getBalancesAvailable();
   }
 
   /**
