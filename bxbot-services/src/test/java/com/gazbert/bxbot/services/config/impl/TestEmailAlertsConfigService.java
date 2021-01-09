@@ -30,7 +30,6 @@ import static org.easymock.EasyMock.verify;
 
 import com.gazbert.bxbot.domain.emailalerts.EmailAlertsConfig;
 import com.gazbert.bxbot.repository.EmailAlertsConfigRepository;
-import com.gazbert.bxbot.services.config.impl.EmailAlertsConfigServiceImpl;
 import org.easymock.EasyMock;
 import org.junit.Test;
 

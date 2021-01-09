@@ -30,7 +30,6 @@ import static org.easymock.EasyMock.verify;
 
 import com.gazbert.bxbot.domain.engine.EngineConfig;
 import com.gazbert.bxbot.repository.EngineConfigRepository;
-import com.gazbert.bxbot.services.config.impl.EngineConfigServiceImpl;
 import org.easymock.EasyMock;
 import org.junit.Test;
 

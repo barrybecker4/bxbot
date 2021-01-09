@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
  */
 public class ExampleScenarios {
 
-  public static final List<ScenarioEnum> SCENARIOS_LIST = Arrays.asList(ScenarioEnum.values());
+  static final List<ScenarioEnum> SCENARIOS_LIST = Arrays.asList(ScenarioEnum.values());
 
   /**
    * Print the scenarios in redable way.

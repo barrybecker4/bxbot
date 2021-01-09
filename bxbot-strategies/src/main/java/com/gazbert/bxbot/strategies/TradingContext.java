@@ -9,8 +9,11 @@ import com.gazbert.bxbot.trading.api.TradingApi;
 import com.gazbert.bxbot.trading.api.TradingApiException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -37,9 +40,14 @@ public class TradingContext {
     return market.getName();
   }
 
-  // typically BTC
+  // typically "BTC"
   public String getBaseCurrency() {
     return market.getBaseCurrency();
+  }
+
+  // typically "USD"
+  public String getCounterCurrency() {
+    return market.getCounterCurrency();
   }
 
   public List<MarketOrder> getBuyOrders() throws TradingApiException, ExchangeNetworkException {
@@ -51,14 +59,25 @@ public class TradingContext {
   }
 
   /**
-   * amount of base currency available to trade.
+   * Amount of base currency available to trade.
    *
    * @return amount of base currency available to trade.
    */
-  public BigDecimal getBaseCurrencyBalance() throws TradingApiException, ExchangeNetworkException {
-    final Map<String, BigDecimal> balancesAvailable =
-            tradingApi.getBalanceInfo().getBalancesAvailable();
-    return balancesAvailable.get(getBaseCurrency());
+  public BigDecimal getBaseCurrencyBalance()
+          throws TradingApiException, ExchangeNetworkException {
+    return getAvailableBalances().get(getBaseCurrency());
+  }
+
+  public BigDecimal getCounterCurrencyBalance()
+          throws TradingApiException, ExchangeNetworkException {
+    return getAvailableBalances().get(getCounterCurrency());
+  }
+
+  // call this version if you need both base and counter currency balances
+  // to avoid multiple api calls
+  public Map<String, BigDecimal> getAvailableBalances()
+          throws TradingApiException, ExchangeNetworkException {
+    return tradingApi.getBalanceInfo().getBalancesAvailable();
   }
 
   /**
@@ -107,13 +126,30 @@ public class TradingContext {
    */
   public boolean isOrderOpen(String orderId)
           throws TradingApiException, ExchangeNetworkException {
-    final List<OpenOrder> myOrders = tradingApi.getYourOpenOrders(market.getId());
-    for (final OpenOrder myOrder : myOrders) {
+    final List<OpenOrder> myOpenOrders = tradingApi.getYourOpenOrders(market.getId());
+    for (final OpenOrder myOrder : myOpenOrders) {
       if (myOrder.getId().equals(orderId)) {
         return true;
       }
     }
     return false;
+  }
+
+  /**
+   * Use current open market orders to see if any of the orders in a specified order list
+   * have been filled. If the id is not in the current open market orders, then we assume
+   * that it was filled.
+   *
+   * @return set of order ids that were filled. There could be 0, but it would be
+   *     very unusual for there to be more than one.
+   */
+  public Set<String> findFilledOrderIds(Set<String> orderIds)
+          throws TradingApiException, ExchangeNetworkException {
+    final List<OpenOrder> myOpenOrders = tradingApi.getYourOpenOrders(market.getId());
+    Set<String> myOrderIds =
+            myOpenOrders.stream().map(OpenOrder::getId).collect(Collectors.toSet());
+    myOrderIds.removeAll(orderIds);
+    return myOrderIds;
   }
 
   /**
@@ -138,11 +174,13 @@ public class TradingContext {
             + PriceUtil.formatPrice(lastTradePriceInUsdForOneBtc) + " "
             + market.getCounterCurrency());
 
-    // Most exchanges (if not all) use 8 decimal places and typically round in favour of the
-    //exchange. It's usually safest to round down the order quantity in your calculations.
+    // TODO: have the exchange API do the rounding
+    // Most exchanges use 8 decimal places (but Kraken uses 1) and typically round in favour of the
+    // exchange. It's usually safest to round down the order quantity in your calculations.
+    int decimals = getExchangeApi().contains("Kraken") ? 1 : 8;
     final BigDecimal amountOfBaseCurrencyToBuy =
             amountOfCounterCurrency.divide(
-                    lastTradePriceInUsdForOneBtc, 8, RoundingMode.HALF_DOWN);
+                    lastTradePriceInUsdForOneBtc, decimals, RoundingMode.HALF_DOWN);
 
     LOG.info(() -> market.getName()
             + " Amount of base currency (" + market.getBaseCurrency() + ") corresponding to "

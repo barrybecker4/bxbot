@@ -86,7 +86,7 @@ public enum ScenarioEnum implements Scenario {
   }
 
   @Override
-  public double[] getSeriesData() {
+  public final double[] getSeriesData() {
     return seriesData;
   }
 
