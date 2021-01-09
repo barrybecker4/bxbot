@@ -300,13 +300,12 @@ public final class KrakenExchangeAdapter extends AbstractExchangeAdapter
 
   /**
    * Apply trading API specific rounding rule.
-   * Most exchanges use 8 decimal places, but Kraken uses 1.
-   * It's usually best to round up the ASK price in your calculations to maximise gains.
+   * Kraken is unique in that the allowed precision is very low.
    *
-   * @return rounded value based on the trading API's required rounding rules
+   * @return allowed decimals of precision in price
    */
-  public BigDecimal roundValue(BigDecimal value) {
-    return value.setScale(DECIMAL_ROUNDING_PRECISION, RoundingMode.HALF_UP);
+  public int getPrecision() {
+    return 1;
   }
 
   @Override

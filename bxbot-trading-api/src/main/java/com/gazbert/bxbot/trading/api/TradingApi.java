@@ -104,11 +104,10 @@ public interface TradingApi {
    * Most exchanges use 8 decimal places, but Kraken uses 1.
    * It's usually best to round up the ASK price in your calculations to maximise gains.
    *
-   * @return rounded value based on the trading API's required rounding rules
+   * @return number of decimal points of precision to use in price
    */
-  default BigDecimal roundValue(BigDecimal value) {
-    int decimals = 8;
-    return value.setScale(decimals, RoundingMode.HALF_UP);
+  default int getPrecision() {
+    return 8;
   }
 
   /**

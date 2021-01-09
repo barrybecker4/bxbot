@@ -62,11 +62,11 @@ public class TestTradingApi {
   }
 
   @Test
-  public void testGetRoundedValue() throws Exception {
+  public void testGetPrecision() throws Exception {
     final MyApiImpl myApi = new MyApiImpl();
     assertEquals(
-            BigDecimal.valueOf(123.23414321),
-            myApi.roundValue(BigDecimal.valueOf(123.234143212313))
+            8,
+            myApi.getPrecision()
     );
   }
 

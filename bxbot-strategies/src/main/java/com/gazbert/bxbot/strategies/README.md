@@ -1,13 +1,9 @@
 # Instructions
 
 ## To run:
- - ./gradlew clean build
- - ./gradlew buildTarGzipDist   (custom yaml files in config dir and will go in the bundle)
- - cd build/distributions
- - tar -xzf bxbot-app-1.0.1.tar.gz
- - cd bxbot-app-1.0.1
- - ./bxbot.sh start
- - For successive times do: ./gradlew clean build buildTarGzipDist
+ - `./gradlew clean build`
+ - `./gradlew startScalper`  to start it running
+ - `./gradlew stopScalper`   to terminate it
    
 ### Output:
  - Look in build/distributions/bxbox-app-1.0.1/logs/bxbot.log

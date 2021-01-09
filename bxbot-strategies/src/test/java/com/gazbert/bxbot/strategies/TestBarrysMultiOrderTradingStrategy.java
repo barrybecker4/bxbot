@@ -184,7 +184,6 @@ public class TestBarrysMultiOrderTradingStrategy {
             new BigDecimal(CONFIG_ITEM_COUNTER_CURRENCY_BUY_ORDER_AMOUNT)))
             .andReturn(amountOfUnitsToBuy).anyTimes();
 
-
     // mock the buy order state that was filled
     final BigDecimal lastOrderAmount = new BigDecimal("35");
     final BigDecimal lastOrderPrice = new BigDecimal("1454.018");
@@ -196,8 +195,7 @@ public class TestBarrysMultiOrderTradingStrategy {
             MARKET_NAME, lastOrderAmount, lastOrderPrice, strategyName, exchangeApi);
     expect(transactionRepo.save(buyEntry)).andReturn(buyEntry);
 
-    expect(context.roundValue(new BigDecimal("1512.17872000000")))
-            .andReturn(new BigDecimal("1512.17872000"));
+    expect(context.getPrecision()).andReturn(8);
 
     // expect to send new sell order to exchange
     final BigDecimal requiredProfitInPercent = new BigDecimal("0.04");
@@ -223,7 +221,6 @@ public class TestBarrysMultiOrderTradingStrategy {
             MARKET_NAME, lastOrderAmount, newAskPrice, strategyName, exchangeApi);
 
     expect(transactionRepo.save(sellEntryFilled)).andReturn(sellEntryFilled);
-
 
     BigDecimal newBuyPrice = new BigDecimal("1572.6658688000000000");
     OrderState expBuyOrder =

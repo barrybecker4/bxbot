@@ -76,7 +76,7 @@ public class BarrysMultiOrderTradingStrategy extends AbstractTradingStrategy {
     // Get the current BID and ASK spot prices.
     final BigDecimal currentBidPrice = buyOrders.get(0).getPrice();
     final BigDecimal currentAskPrice = sellOrders.get(0).getPrice();
-    logPrices(currentBidPrice, currentAskPrice);
+    //logPrices(currentBidPrice, currentAskPrice);
 
     if (lastOrder == null) {
       latestHighPrice = currentAskPrice;
@@ -119,8 +119,8 @@ public class BarrysMultiOrderTradingStrategy extends AbstractTradingStrategy {
   private void sendInitialBuyOrder(BigDecimal currentPrice)
       throws StrategyException {
     LOG.info(() -> context.getMarketName()
-                + "Just starting - placing new BUY order at ["
-                + PriceUtil.formatPrice(currentPrice) + "]");
+                + "Just starting - placing new BUY order at price="
+                + PriceUtil.formatPrice(currentPrice));
     sendBuyOrder(currentPrice);
   }
 
@@ -158,8 +158,8 @@ public class BarrysMultiOrderTradingStrategy extends AbstractTradingStrategy {
         LOG.info(() -> context.getMarketName()
                 + " Amount to add to last buy order fill price: " + amountToAdd);
 
-        BigDecimal unroundedPrice = lastOrder.price.add(amountToAdd);
-        final BigDecimal newAskPrice = context.roundValue(unroundedPrice);
+        final BigDecimal newAskPrice = lastOrder.price.add(amountToAdd)
+                .setScale(context.getPrecision(), RoundingMode.HALF_UP);
 
         // sendSellOrder
         boolean availableSlots = sellOrderStack.size() < getConfig().getMaxConcurrentSellOrders();
@@ -202,7 +202,7 @@ public class BarrysMultiOrderTradingStrategy extends AbstractTradingStrategy {
           sendBuyOrder(buyPrice);
         }
       } else {
-        logSellOrderNotFilledYet(currentBidPrice);
+        //logSellOrderNotFilledYet(currentBidPrice);
       }
     } catch (ExchangeNetworkException e) {
       handleExchangeNetworkException("New Order to SELL base currency failed", e);
@@ -228,9 +228,10 @@ public class BarrysMultiOrderTradingStrategy extends AbstractTradingStrategy {
             currentBidPrice.compareTo(lastOrder.price.multiply(ONE.subtract(percentThresh))) < 0;
     boolean availableSlots = sellOrderStack.size() < getConfig().getMaxConcurrentSellOrders();
     if (belowThresh && availableSlots) {
+      /*
       LOG.info(() -> context.getMarketName()
               + "Placing new BUY order at ["
-              + PriceUtil.formatPrice(currentBidPrice) + "]");
+              + PriceUtil.formatPrice(currentBidPrice) + "]");*/
       sendBuyOrder(currentBidPrice);
     }
   }
@@ -261,9 +262,10 @@ public class BarrysMultiOrderTradingStrategy extends AbstractTradingStrategy {
 
     if (aboveThresh && fundsAvailable) {
       latestHighPrice = currentAskPrice;
+      /*
       LOG.info(() -> context.getMarketName()
               + "Placing new SELL order at ["
-              + PriceUtil.formatPrice(currentAskPrice) + "]");
+              + PriceUtil.formatPrice(currentAskPrice) + "]");*/
       lastOrder = sendSellOrder(amountOfBaseCurrencyToSell, currentAskPrice);
     }
   }

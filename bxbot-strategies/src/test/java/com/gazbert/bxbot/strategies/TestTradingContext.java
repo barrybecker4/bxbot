@@ -196,8 +196,7 @@ public class TestTradingContext {
     expect(market.getCounterCurrency()).andReturn("BTC").anyTimes();
     expect(tradingApi.getImplName()).andReturn("Bitstamp").anyTimes();
     BigDecimal lastTradePrice = new BigDecimal("1234.56");
-    expect(tradingApi.roundValue(BigDecimal.valueOf(0.0810005184033178)))
-            .andReturn(BigDecimal.valueOf(0.08100052));
+    //expect(tradingApi.getPrecision()).andReturn(8);
     expect(tradingApi.getLatestMarketPrice(MARKET_ID)).andReturn(lastTradePrice);
 
     replay(market, tradingApi, config, marketOrderBook, marketBuyOrder, marketSellOrder);

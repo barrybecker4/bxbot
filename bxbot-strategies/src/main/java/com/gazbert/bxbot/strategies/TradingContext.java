@@ -61,10 +61,10 @@ public class TradingContext {
   /**
    * Round based on trading API rules.
    *
-   * @return rounded value based on the trading API's required rounding rules
+   * @return number of decimal point to use when rounding
    */
-  public BigDecimal roundValue(BigDecimal value) {
-    return tradingApi.roundValue(value);
+  public int getPrecision() {
+    return tradingApi.getPrecision();
   }
 
   /**
@@ -96,13 +96,15 @@ public class TradingContext {
   public OrderState sendBuyOrder(BigDecimal amountOfBaseCurrencyToBuy, BigDecimal bidPrice)
           throws TradingApiException, ExchangeNetworkException {
 
-    LOG.info(() -> market.getName()
-            + " Sending BUY order to exchange with bid=" + bidPrice + " --->");
+    //    LOG.info(() -> market.getName()
+    //            + " About to send BUY Order with bid=" + bidPrice
+    //            + ", amountOfBaseToBuy = " + amountOfBaseCurrencyToBuy);
 
     String id = tradingApi.createOrder(market.getId(),
             OrderType.BUY, amountOfBaseCurrencyToBuy, bidPrice);
 
-    LOG.info(() -> market.getName() + " BUY Order sent successfully. ID: " + id);
+    LOG.info(() -> market.getName()
+            + " BUY Order sent successfully with bid=" + bidPrice + ". ID: " + id);
 
     return new OrderState(id, OrderType.BUY, bidPrice, amountOfBaseCurrencyToBuy);
   }
@@ -114,17 +116,18 @@ public class TradingContext {
   public OrderState sendSellOrder(BigDecimal amountOfBaseCurrencyToSell, BigDecimal askPrice)
           throws TradingApiException, ExchangeNetworkException {
 
-    LOG.info(() -> market.getName()
-            + " Placing new SELL order at ask price ["
-            + PriceUtil.formatPrice(askPrice) + "]");
+    //    LOG.info(() -> market.getName()
+    //            + " Placing new SELL order at ask price ["
+    //            + PriceUtil.formatPrice(askPrice) + "]");
 
-    LOG.info(() -> market.getName() + " Sending new SELL order to exchange --->");
+    //LOG.info(() -> market.getName() + " Sending new SELL order to exchange --->");
 
     // Build the new sell order
     String id = tradingApi.createOrder(market.getId(),
             OrderType.SELL, amountOfBaseCurrencyToSell, askPrice);
 
-    LOG.info(() -> market.getName() + " New SELL Order sent successfully. ID: " + id);
+    LOG.info(() -> market.getName() + " SELL Order sent successfully at ask price="
+            + PriceUtil.formatPrice(askPrice) + ". ID: " + id);
 
     return new OrderState(id, OrderType.SELL, askPrice, amountOfBaseCurrencyToSell);
   }
@@ -178,15 +181,14 @@ public class TradingContext {
     // Fetch the last trade price
     final BigDecimal lastTradePriceInUsdForOneBtc = tradingApi.getLatestMarketPrice(market.getId());
 
+    /*
     LOG.info(() -> market.getName()
             + " Last trade price for 1 " + market.getBaseCurrency() + " was: "
             + PriceUtil.formatPrice(lastTradePriceInUsdForOneBtc) + " "
-            + market.getCounterCurrency());
+            + market.getCounterCurrency());*/
 
-    BigDecimal unroundedBaseCurrency = amountOfCounterCurrency
-            .divide(lastTradePriceInUsdForOneBtc, 16, RoundingMode.HALF_UP);
-    final BigDecimal amountOfBaseCurrencyToBuy =
-            roundValue(unroundedBaseCurrency);
+    final BigDecimal amountOfBaseCurrencyToBuy = amountOfCounterCurrency
+            .divide(lastTradePriceInUsdForOneBtc, 8, RoundingMode.HALF_UP);
 
     LOG.info(() -> market.getName()
             + " Amount of base currency (" + market.getBaseCurrency() + ") corresponding to "
