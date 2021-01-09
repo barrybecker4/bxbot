@@ -174,11 +174,13 @@ public class TradingContext {
             + PriceUtil.formatPrice(lastTradePriceInUsdForOneBtc) + " "
             + market.getCounterCurrency());
 
-    // Most exchanges (if not all) use 8 decimal places and typically round in favour of the
-    //exchange. It's usually safest to round down the order quantity in your calculations.
+    // TODO: have the exchange API do the rounding
+    // Most exchanges use 8 decimal places (but Kraken uses 1) and typically round in favour of the
+    // exchange. It's usually safest to round down the order quantity in your calculations.
+    int decimals = getExchangeApi().contains("Kraken") ? 1 : 8;
     final BigDecimal amountOfBaseCurrencyToBuy =
             amountOfCounterCurrency.divide(
-                    lastTradePriceInUsdForOneBtc, 8, RoundingMode.HALF_DOWN);
+                    lastTradePriceInUsdForOneBtc, decimals, RoundingMode.HALF_DOWN);
 
     LOG.info(() -> market.getName()
             + " Amount of base currency (" + market.getBaseCurrency() + ") corresponding to "

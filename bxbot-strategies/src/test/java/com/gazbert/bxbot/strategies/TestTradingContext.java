@@ -194,6 +194,7 @@ public class TestTradingContext {
 
     expect(market.getBaseCurrency()).andReturn("USD").anyTimes();
     expect(market.getCounterCurrency()).andReturn("BTC").anyTimes();
+    expect(tradingApi.getImplName()).andReturn("Bitstamp").anyTimes();
     BigDecimal lastTradePrice = new BigDecimal("1234.56");
     expect(tradingApi.getLatestMarketPrice(MARKET_ID)).andReturn(lastTradePrice);
 
