@@ -171,6 +171,8 @@ public final class KrakenExchangeAdapter extends AbstractExchangeAdapter
       "keep-alive-during-maintenance";
   private static final String EXCHANGE_UNDERGOING_MAINTENANCE_RESPONSE = "EService:Unavailable";
 
+  private static final int DECIMAL_ROUNDING_PRECISION = 1;
+
   private long nonce = 0;
 
   private BigDecimal buyFeePercentage;
@@ -294,6 +296,17 @@ public final class KrakenExchangeAdapter extends AbstractExchangeAdapter
       LOG.error(UNEXPECTED_ERROR_MSG, e);
       throw new TradingApiException(UNEXPECTED_ERROR_MSG, e);
     }
+  }
+
+  /**
+   * Apply trading API specific rounding rule.
+   * Most exchanges use 8 decimal places, but Kraken uses 1.
+   * It's usually best to round up the ASK price in your calculations to maximise gains.
+   *
+   * @return rounded value based on the trading API's required rounding rules
+   */
+  public BigDecimal roundValue(BigDecimal value) {
+    return value.setScale(DECIMAL_ROUNDING_PRECISION, RoundingMode.HALF_UP);
   }
 
   @Override

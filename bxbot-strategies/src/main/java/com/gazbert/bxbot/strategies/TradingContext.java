@@ -59,6 +59,15 @@ public class TradingContext {
   }
 
   /**
+   * Round based on trading API rules.
+   *
+   * @return rounded value based on the trading API's required rounding rules
+   */
+  public BigDecimal roundValue(BigDecimal value) {
+    return tradingApi.roundValue(value);
+  }
+
+  /**
    * Amount of base currency available to trade.
    *
    * @return amount of base currency available to trade.
@@ -174,13 +183,10 @@ public class TradingContext {
             + PriceUtil.formatPrice(lastTradePriceInUsdForOneBtc) + " "
             + market.getCounterCurrency());
 
-    // TODO: have the exchange API do the rounding
-    // Most exchanges use 8 decimal places (but Kraken uses 1) and typically round in favour of the
-    // exchange. It's usually safest to round down the order quantity in your calculations.
-    int decimals = getExchangeApi().contains("Kraken") ? 1 : 8;
+    BigDecimal unroundedBaseCurrency = amountOfCounterCurrency
+            .divide(lastTradePriceInUsdForOneBtc, 16, RoundingMode.HALF_UP);
     final BigDecimal amountOfBaseCurrencyToBuy =
-            amountOfCounterCurrency.divide(
-                    lastTradePriceInUsdForOneBtc, decimals, RoundingMode.HALF_DOWN);
+            roundValue(unroundedBaseCurrency);
 
     LOG.info(() -> market.getName()
             + " Amount of base currency (" + market.getBaseCurrency() + ") corresponding to "

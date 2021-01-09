@@ -24,6 +24,7 @@
 package com.gazbert.bxbot.trading.api;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 /**
@@ -97,6 +98,18 @@ public interface TradingApi {
    */
   List<OpenOrder> getYourOpenOrders(String marketId)
       throws ExchangeNetworkException, TradingApiException;
+
+  /**
+   * Apply trading API specific rounding rule.
+   * Most exchanges use 8 decimal places, but Kraken uses 1.
+   * It's usually best to round up the ASK price in your calculations to maximise gains.
+   *
+   * @return rounded value based on the trading API's required rounding rules
+   */
+  default BigDecimal roundValue(BigDecimal value) {
+    int decimals = 8;
+    return value.setScale(decimals, RoundingMode.HALF_UP);
+  }
 
   /**
    * Places an order on the exchange.

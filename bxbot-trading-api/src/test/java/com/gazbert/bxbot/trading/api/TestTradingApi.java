@@ -61,6 +61,15 @@ public class TestTradingApi {
     assertNull(ticker.getTimestamp());
   }
 
+  @Test
+  public void testGetRoundedValue() throws Exception {
+    final MyApiImpl myApi = new MyApiImpl();
+    assertEquals(
+            BigDecimal.valueOf(123.23414321),
+            myApi.roundValue(BigDecimal.valueOf(123.234143212313))
+    );
+  }
+
   /** Test class. */
   class MyApiImpl implements TradingApi {
 
