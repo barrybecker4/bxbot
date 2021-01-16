@@ -197,9 +197,12 @@ public class BarrysMultiOrderTradingStrategy extends AbstractTradingStrategy {
         BigDecimal buyPrice =
                 lastOrder.price.multiply(ONE.add(getConfig().getPercentChangeThreshold()));
 
+        final BigDecimal roundedBuyPrice =
+                buyPrice.setScale(context.getPrecision(), RoundingMode.HALF_UP);
+
         boolean availableSlots = buyOrderStack.size() < getConfig().getMaxConcurrentSellOrders();
         if (availableSlots) {
-          sendBuyOrder(buyPrice);
+          sendBuyOrder(roundedBuyPrice);
         }
       } else {
         //logSellOrderNotFilledYet(currentBidPrice);

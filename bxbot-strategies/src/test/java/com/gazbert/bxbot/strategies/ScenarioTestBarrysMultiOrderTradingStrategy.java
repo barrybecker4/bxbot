@@ -29,17 +29,17 @@ public class ScenarioTestBarrysMultiOrderTradingStrategy extends ScenarioTestBas
     Map<Scenario, Double> expResults = new LinkedHashMap<>();
 
     // Barry's multi-order strategy
-    expResults.put(ScenarioEnum.LINEAR_INCREASING, 1246.6687449900676);
-    expResults.put(ScenarioEnum.VOLATILE_INCREASING, 1676.0152523952222);
-    expResults.put(ScenarioEnum.EXPONENTIAL_INCREASING, 3777.0709648135107);
-    expResults.put(ScenarioEnum.FLAT, 1106.8671234190554);
-    expResults.put(ScenarioEnum.RANDOM_WALK, 1782.468174054819);
+    expResults.put(ScenarioEnum.LINEAR_INCREASING, 1246.6687449900792);
+    expResults.put(ScenarioEnum.VOLATILE_INCREASING, 1676.0152523952324);
+    expResults.put(ScenarioEnum.EXPONENTIAL_INCREASING, 3777.070964813481);
+    expResults.put(ScenarioEnum.FLAT, 1106.8671234190444);
+    expResults.put(ScenarioEnum.RANDOM_WALK, 1782.4681740547994);
     expResults.put(ScenarioEnum.EXPONENTIAL_DECREASING, 706.0117655649542);
     expResults.put(ScenarioEnum.VOLATILE_DECREASING, 1140.9945772497686);
-    expResults.put(ScenarioEnum.LINEAR_DECREASING, 867.5457903465663);
-    expResults.put(ScenarioEnum.EXPONENTIAL_INCREASE_WITH_CRASH, 607.4068058060816);
-    expResults.put(ScenarioEnum.EXPONENTIAL_INCREASING_WITH_CRASHES, 1608.6149046197206);
-    expResults.put(ScenarioEnum.HISTORICAL_DATA, 1185.3989547175693);
+    expResults.put(ScenarioEnum.LINEAR_DECREASING, 867.5457903465647);
+    expResults.put(ScenarioEnum.EXPONENTIAL_INCREASE_WITH_CRASH, 607.4068058060848);
+    expResults.put(ScenarioEnum.EXPONENTIAL_INCREASING_WITH_CRASHES, 1608.6149046197118);
+    expResults.put(ScenarioEnum.HISTORICAL_DATA, 1185.3989547175383);
 
     verifySimulationResults(expResults);
   }
